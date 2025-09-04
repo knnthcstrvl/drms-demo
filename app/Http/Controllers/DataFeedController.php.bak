@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\DataFeed;
+
+class DataFeedController extends Controller
+{
+    /**
+     * @param Request $request
+     * @return mixed
+     */
+    public function jsonDataFeed(Request $request)
+    {
+        $datatype = $request->get('datatype', 1);
+        
+        if ($datatype == 1) {
+            // Get student registration data for the last 26 days
+            $days = 26;
+            $dates = [];
+            $data = [];
+            
+            for ($i = $days - 1; $i >= 0; $i--) {
+                $date = now()->subDays($i);
+                $dates[] = $date->format('m-d-Y');
+                
+                // Count students created on this specific day
+                $count = Student::whereDate('date_time_created', $date->format('Y-m-d'))->count();
+                $data[] = $count;
+            }
+            
+            // For the second dataset (comparison), you can use previous period data
+            // or duplicate the data with some variation
+            $data2 = array_map(function($value) {
+                return max(0, $value - rand(0, 2)); // Slight variation for demo
+            }, $data);
+            
+            return response()->json([
+                'labels' => $dates,
+                'data' => array_merge($data, $data2) // Combine both datasets
+            ]);
+        }
+        
+        return response()->json(['labels' => [], 'data' => []]);
+    }
+}

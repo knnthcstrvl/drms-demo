@@ -1,0 +1,201 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\DataFeed;
+use App\Models\Student;
+use App\Models\AuditLog;
+use Illuminate\Support\Facades\Log;
+
+class DocumentController extends Controller
+{
+    public function index ()
+    {
+        return view('pages.document.document', ['students' => null]);
+    }
+
+    public function view($selected = null)
+    {
+        if (!$selected) {
+            session()->flash('error_notification', 'Missing student number.');
+            return redirect()->route('document');
+        }
+
+        $student = Student::where('student_number', $selected)->first();
+
+        if (!$student) {
+            session()->flash('error_notification', "Student number {$selected} was not found.");
+            return redirect()->route('document');
+        }
+
+        $filePath = storage_path("app/public/documents/{$student->student_number}.pdf");
+
+        if (!file_exists($filePath)) {
+            session()->flash('error_notification', "Document for student number {$selected} does not exist.");
+            return redirect()->route('document');
+        }
+
+        // Check if this is a request for the PDF file
+        if (request()->has('file') && request()->get('file') === 'true') {
+            return response()->file($filePath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $student->student_number . '.pdf"'
+            ]);
+        }
+
+        // Log viewing (only for the main view, not for PDF requests)
+        AuditLog::create([
+            'user' => auth()->user()->full_name,
+            'date_time' => now(),
+            'activity_type' => 'View',
+            'student_number' => $student->student_number,
+            'first_name' => $student->first_name,
+            'middle_name' => $student->middle_name,
+            'last_name' => $student->last_name,
+        ]);
+
+        return view('pages.document.document', [
+            'students' => $student,
+            'openModal' => 'view-modal',
+        ]);
+    }
+
+    public function download($selected = null)
+    {
+        if (empty($selected)) {
+            return redirect()->route('document')->with('error_notification', 'Missing student number.');
+        }
+
+        $user = auth()->user();
+        $accessLevels = explode(',', $user->access_level);
+
+        if (!in_array('Download', $accessLevels)) {
+            return redirect()->route('document')->with('error_notification', 'Download permission is required.');
+        }
+
+        $student = Student::where('student_number', $selected)->first();
+
+        if (!$student) {
+            return redirect()->route('document')->with('error_notification', "Student number {$selected} was not found.");
+        }
+
+        $filePath = storage_path("app/public/documents/{$student->student_number}.pdf");
+        $filename = "{$student->student_number}.pdf";
+
+        if (!file_exists($filePath)) {
+            return redirect()->route('document')->with('error_notification', "Document for student number {$selected} does not exist.");
+        }
+
+        AuditLog::create([
+            'user' => $user->full_name,
+            'date_time' => now(),
+            'activity_type' => 'Download',
+            'student_number' => $student->student_number,
+            'first_name' => $student->first_name,
+            'middle_name' => $student->middle_name,
+            'last_name' => $student->last_name,
+        ]);
+
+        return response()->download($filePath, $filename, [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+
+    // fix the bulk select bug (it auto select all)
+    public function downloadBulk(Request $request)
+    {
+        $selected = $request->input('selected');
+    
+        if (!$selected || !is_array($selected)) {
+            return back()->with('error', 'No files selected for download.');
+        }
+    
+        $zipFileName = 'drms_documents.zip';
+        $zipPath = storage_path($zipFileName);
+    
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+            foreach ($selected as $file) {
+                $filePath = storage_path('app/public/documents/' . $file . '.pdf');
+                if (file_exists($filePath)) {
+                    $zip->addFile($filePath, $file . '.pdf');
+                }
+            }
+            $zip->close();
+    
+            return response()->download($zipPath)->deleteFileAfterSend(true);
+        }
+    
+        return back()->with('error', 'Failed to create ZIP file.');
+    }
+
+    public function print($selected = null)
+    {
+        // Handle AJAX pre-check request
+        if (request()->ajax() || request()->wantsJson() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
+            if (empty($selected)) {
+                return response()->json(['error' => 'Missing student number.'], 400);
+            }
+
+            $user = auth()->user();
+            $accessLevels = explode(',', $user->access_level);
+            if (!in_array('Print', $accessLevels)) {
+                return response()->json(['error' => 'Unauthorized access.'], 403);
+            }
+
+            $student = Student::where('student_number', $selected)->first();
+            if (!$student) {
+                return response()->json(['error' => "Student number {$selected} was not found."], 404);
+            }
+
+            $filePath = storage_path("app/public/documents/{$student->student_number}.pdf");
+            if (!file_exists($filePath)) {
+                return response()->json(['error' => "Document for student number {$selected} does not exist."], 404);
+            }
+
+            return response()->json(['success' => true]);
+        }
+
+        // Normal full redirect mode
+        if (empty($selected)) {
+            return redirect()->route('document')->with('error_notification', 'Missing student number.');
+        }
+
+        $user = auth()->user();
+        $accessLevels = explode(',', $user->access_level);
+        if (!in_array('Print', $accessLevels)) {
+            return redirect()->route('document')->with('error_notification', 'Print permission is required.');
+        }
+
+        $student = Student::where('student_number', $selected)->first();
+        if (!$student) {
+            return redirect()->route('document')->with('error_notification', "Student number {$selected} was not found.");
+        }
+
+        $filePath = storage_path("app/public/documents/{$student->student_number}.pdf");
+        if (!file_exists($filePath)) {
+            return redirect()->route('document')->with('error_notification', "Document for student number {$selected} does not exist.");
+        }
+
+        AuditLog::create([
+            'user' => $user->full_name,
+            'date_time' => now(),
+            'activity_type' => 'Print',
+            'student_number' => $student->student_number,
+            'first_name' => $student->first_name,
+            'middle_name' => $student->middle_name,
+            'last_name' => $student->last_name,
+        ]);
+
+        return response()->file($filePath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+}

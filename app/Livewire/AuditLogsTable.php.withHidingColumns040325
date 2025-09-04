@@ -1,0 +1,190 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Models\AuditLog;
+use Illuminate\Database\Eloquent\Builder;
+use Rappasoft\LaravelLivewireTables\DataTableComponent;
+use Rappasoft\LaravelLivewireTables\Views\Column;
+use Rappasoft\LaravelLivewireTables\Views\Filters\{SelectFilter,DateRangeFilter};
+
+class AuditLogsTable extends DataTableComponent
+{
+    protected $model = AuditLog::class;
+    
+    // Add property to track the selected activity type
+    public $selectedActivityType = '';
+
+    // Add listener for refreshing the table when filter changes
+    public function getListeners(): array
+    {
+        return array_merge(
+            parent::getListeners(),
+            [
+                'refreshDatatable' => 'refresh',
+            ]
+        );
+    }
+
+    public function getVisibleColumns(): array
+    {
+        // Default: all columns are visible
+        $columns = [
+            'user' => true,
+            'date_time' => true,
+            'activity_type' => true,
+            'username' => true,
+            'full_name' => true,
+            'student_number' => true,
+            'first_name' => true,
+            'middle_name' => true,
+            'last_name' => true,
+        ];
+    
+        // Apply visibility rules based on selected activity type
+        if ($this->selectedActivityType === 'Login') {
+            // Hide username, full_name, student_number, first_name, middle_name, last_name
+            $columns['username'] = false;
+            $columns['full_name'] = false;
+            $columns['student_number'] = false;
+            $columns['first_name'] = false;
+            $columns['middle_name'] = false;
+            $columns['last_name'] = false;
+        } elseif (in_array($this->selectedActivityType, ['View', 'Download', 'Print'])) {
+            // Hide username and full_name columns
+            $columns['username'] = false;
+            $columns['full_name'] = false;
+        } elseif (in_array($this->selectedActivityType, ['Add', 'Edit', 'Reset', 'Delete'])) {
+            // Hide student_number, first_name, middle_name, last_name columns
+            $columns['student_number'] = false;
+            $columns['first_name'] = false;
+            $columns['middle_name'] = false;
+            $columns['last_name'] = false;
+        }
+    
+        return $columns;
+    }    
+
+    public function columns(): array {
+        $visibleColumns = $this->getVisibleColumns();
+        
+        $allColumns = [
+            Column::make("User", "user")
+                ->sortable()
+                ->searchable(),
+            Column::make("Date & time", "date_time")
+                ->sortable(),
+            Column::make("Activity type", "activity_type")
+                ->sortable()
+                ->searchable(),
+            Column::make("Username", "username")
+                ->sortable()
+                ->searchable(),
+            Column::make("Full name", "full_name")
+                ->sortable()
+                ->searchable(),
+            Column::make("Student number", "student_number")
+                ->sortable()
+                ->searchable(),
+            Column::make("First name", "first_name")
+                ->sortable()
+                ->searchable(),
+            Column::make("Middle name", "middle_name")
+                ->sortable()
+                ->searchable(),
+            Column::make("Last name", "last_name")
+                ->sortable()
+                ->searchable(),
+        ];
+        
+        // Apply visibility settings to columns
+        foreach ($allColumns as $index => $column) {
+            $columnName = $column->getField();
+            if (isset($visibleColumns[$columnName])) {
+                $allColumns[$index] = $column->hideIf(!$visibleColumns[$columnName]);
+            }
+        }
+
+        return $allColumns;
+    }
+
+    public function configure(): void {
+        $this->setPrimaryKey('id')
+            ->useComputedPropertiesDisabled()
+            ->setDefaultSort('id', 'desc')
+            ->setTrimSearchStringEnabled()
+            ->setTdAttributes(function (Column $column, $row, $columnIndex, $rowIndex) {
+                if ($column->isField('username') || $column->isField('student_number')) {
+                    return ['class' => 'text-blue-400 hover:underline'];
+                }
+                if ($column->isField('activity_type')) {
+                    $classes = match ($row->activity_type) {
+                        'Login' => '!inline-block !mx-6 !my-4 !px-2 !py-1 !text-xs !text-gray3 !bg-gray3/20 !rounded-full',
+                        'View'  => '!inline-block !mx-6 !my-4 !px-2 !py-1 !text-xs !text-primary !bg-primary/20 !rounded-full',
+                        'Download'  => '!inline-block !mx-6 !my-4 !px-2 !py-1 !text-xs !text-secondary !bg-secondary/20 !rounded-full',
+                        'Print'  => '!inline-block !mx-6 !my-4 !px-2 !py-1 !text-xs !text-green-700 !bg-green-500/20 !rounded-full',
+                        'Add'  => '!inline-block !mx-6 !my-4 !px-2 !py-1 !text-xs !text-sky-700 !bg-sky-500/20 !rounded-full',
+                        'Edit'  => '!inline-block !mx-6 !my-4 !px-2 !py-1 !text-xs !text-blue-700 !bg-blue-500/20 !rounded-full',
+                        'Reset'  => '!inline-block !mx-6 !my-4 !px-2 !py-1 !text-xs !text-cyan-700 !bg-cyan-500/20 !rounded-full',
+                        'Delete'  => '!inline-block !mx-6 !my-4 !px-2 !py-1 !text-xs !text-red-700 !bg-red-500/20 !rounded-full',
+                        default => '',
+                    };
+            
+                    return ['class' => $classes];
+                }
+            
+                return [];
+            });
+    }
+
+    public function getDistinctColumnValues(string $column): array {
+        return AuditLog::query()
+            ->whereNotNull($column)
+            ->distinct()
+            ->pluck($column, $column)
+            ->prepend('All', '')
+            ->toArray();
+    }  
+
+    public function filters(): array {
+        return [
+            SelectFilter::make('User')
+                ->options($this->getDistinctColumnValues('user'))
+                ->filter(function (Builder $builder, string $value) {
+                    if ($value !== '') {
+                        $builder->where('user', $value);
+                    }
+                }),
+            DateRangeFilter::make('Date & Time')
+                ->config([
+                    'allowInput' => true,
+                    'altFormat' => 'F j, Y',
+                    'ariaDateFormat' => 'F j, Y',
+                    'dateFormat' => 'Y-m-d',
+                    'earliestDate' => '2020-01-01',
+                    'latestDate' => now()->format('Y-m-d'),
+                    'placeholder' => 'Enter Date Range',
+                    'locale' => 'en',
+                ])
+                ->setFilterPillValues([0 => 'minDate', 1 => 'maxDate'])
+                ->filter(function (Builder $builder, array $dateRange) { 
+                    $builder
+                        ->where('date_time', '>=', $dateRange['minDate'] . ' 00:00:00')
+                        ->where('date_time', '<=', $dateRange['maxDate'] . ' 23:59:59');
+                }),
+            SelectFilter::make('Activity Type')
+                ->options($this->getDistinctColumnValues('activity_type'))
+                ->filter(function (Builder $builder, string $value) {
+                    if ($value !== '') {
+                        $builder->where('activity_type', $value);
+                        // Update selected activity type and refresh table
+                        $this->selectedActivityType = $value;
+                    } else {
+                        $this->selectedActivityType = '';
+                    }
+                    
+                    
+                }),
+        ];
+    }
+}

@@ -1,0 +1,108 @@
+<?php
+
+namespace App\Livewire;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
+use Rappasoft\LaravelLivewireTables\DataTableComponent;
+use Rappasoft\LaravelLivewireTables\Views\Column;
+use Rappasoft\LaravelLivewireTables\Views\Columns\ButtonGroupColumn;
+use Rappasoft\LaravelLivewireTables\Views\Columns\LinkColumn;
+use App\Models\User;
+
+class AccessControlManageUserTable extends DataTableComponent
+{
+    protected $model = User::class;
+
+    public array $selectedUsers = [];
+    public array $editingUser = [];
+
+    protected $listeners = ['deleteConfirmed', 'updateUser'];
+
+    public function columns(): array
+    {
+        return [
+            ButtonGroupColumn::make('Actions')
+            ->attributes(fn($row) => ['class' => 'space-x-2 flex justify-center'])
+            ->buttons([
+                LinkColumn::make('Edit') // Add Edit button
+                    ->title(fn($row) => '<i class="fas fa-edit text-blue-500 cursor-pointer"></i>')
+                    ->location(fn($row) => 'javascript:void(0)') 
+                    ->attributes(fn($row) => [
+                        'class' => 'text-blue-500 dark:text-white',
+                        'title' => 'Edit ' . $row->name,
+                        'onclick' => "showEditModal()",
+                    ])
+                    ->html(),
+    
+                LinkColumn::make('Delete')
+                    ->title(fn($row) => '<i class="fas fa-trash text-red-500 cursor-pointer"></i>')
+                    ->location(fn($row) => 'javascript:void(0)') 
+                    ->attributes(fn($row) => [
+                        'class' => 'text-red-500 dark:text-white',
+                        'title' => 'Delete ' . $row->name,
+                        'onclick' => "showDeleteModal('" . addslashes($row->username) . "')",
+                    ])
+                    ->html(),
+            ]),
+            Column::make("Full name", "full_name")->sortable(),
+            Column::make("Username", "username")->sortable()->searchable(),
+            Column::make("Email Address", "email")->sortable(),
+            Column::make("Access level", "access_level")->sortable(),
+            Column::make("Status", "status")->sortable(),
+            Column::make("Date Updated", "date_time_updated")->sortable(),
+        ];
+    }       
+
+    public function builder(): Builder
+    {
+        return User::query()->where('username', '!=', 'kcavila');
+    }
+
+    public function configure(): void 
+    {
+        $this->setPrimaryKey('username');
+
+        $this->useComputedPropertiesDisabled();
+
+        $this->setBulkActions([
+            'deleteSelected' => 'Delete',
+        ]);
+    }
+
+    public function deleteSelected()
+    {
+        if (!empty($this->getSelected())) {
+            $this->selectedUsers = $this->getSelected();
+            $this->dispatch('showDeleteUserModal');
+        }
+    }
+
+    public function deleteConfirmed()
+    {
+        if (!empty($this->selectedUsers)) {
+            User::whereIn('username', $this->selectedUsers)->delete();
+            $this->clearSelected();
+            session()->flash('message', 'Selected users deleted successfully.');
+            $this->selectedUsers = [];
+        }
+    }
+
+    public function editUser($data)
+    {
+        $this->editingUser = $data;
+        $this->dispatch('showEditUserModal', ['user' => $data]);
+    }
+
+    public function updateUser($data)
+    {
+        User::where('username', $data['username'])->update([
+            'full_name' => $data['full_name'],
+            'email' => $data['email'],
+            'access_level' => $data['access_level'],
+            'date_time_updated' => now(),
+        ]);
+
+        session()->flash('message', 'User updated successfully.');
+    }
+}

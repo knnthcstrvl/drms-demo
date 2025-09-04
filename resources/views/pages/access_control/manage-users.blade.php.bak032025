@@ -1,0 +1,77 @@
+@section('title','| Access Control')
+
+<x-app-layout>
+    <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
+        <div class="sm:flex sm:justify-between sm:items-center mb-8">
+            <div class="mb-4 sm:mb-0">
+                <h1 class="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">Manage Users</h1>
+            </div>
+        </div>
+
+        <div class="w-full bg-white dark:bg-gray-800 p-4 rounded-lg">
+            <livewire:access-control-manage-user-table />
+        </div>
+
+    </div>
+
+    <!-- Delete User Modal (Unchanged) -->
+    <x-bladewind.modal
+        size="small"
+        title="Delete User"
+        name="delete-user-modal"
+        ok_button_label="Confirm"
+        ok_button_action="confirmDeleteUser()" >
+        Are you sure you want to delete this user?
+    </x-bladewind.modal>
+
+    <!-- Edit User Modal (NEW) -->
+    <x-bladewind.modal
+        size="large"
+        title="Edit User"
+        name="edit-user-modal"
+        ok_button_label="Save Changes"
+        ok_button_action="confirmEditUser()" >
+        
+        <input type="hidden" id="edit-user-id">
+
+        <div>
+            <label class="block font-medium">Full Name</label>
+            <input type="text" id="edit-full-name" class="bw-input" required>
+        </div>
+
+        <div>
+            <label class="block font-medium">Username</label>
+            <input type="text" id="edit-username" class="bw-input" required disabled>
+        </div>
+
+        <div>
+            <label class="block font-medium">Email</label>
+            <input type="email" id="edit-email" class="bw-input">
+        </div>
+
+        <div>
+            <label class="block font-medium">Access Level</label>
+            <select id="edit-access-level" class="bw-select">
+                <option value="admin">Admin</option>
+                <option value="user">User</option>
+            </select>
+        </div>
+
+    </x-bladewind.modal>
+
+</x-app-layout>
+
+<script>
+    window.addEventListener('showDeleteUserModal', () => {
+        showModal('delete-user-modal');
+    });
+
+    function confirmDeleteUser() {
+        window.dispatchEvent(new Event('deleteConfirmed'));
+        hideModal('delete-user-modal');
+    }
+
+    function showEditModal() {
+        showModal('edit-user-modal');
+    }
+</script>

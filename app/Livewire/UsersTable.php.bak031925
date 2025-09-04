@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Livewire;
+
+use Rappasoft\LaravelLivewireTables\DataTableComponent;
+use Rappasoft\LaravelLivewireTables\Views\Column;
+use App\Models\User;
+
+class UsersTable extends DataTableComponent
+{
+    protected $model = User::class;
+
+    public function configure(): void
+    {
+        $this->setPrimaryKey('id')
+            ->setTableRowUrl(function($row) {
+                return route('document', $row->id);
+            })
+            ->setTableRowUrlTarget(function($row) {
+                if (filter_var($row->website, FILTER_VALIDATE_URL) && strpos($row->website, 'http') === 0) {
+                    return '_blank';
+                }
+                return '_self';
+            });
+    
+        $this->useComputedPropertiesDisabled();
+    }
+
+    public function columns(): array
+    {
+        return [
+            Column::make("Id", "id")
+                ->sortable(),
+            Column::make("Name", "name")
+                ->sortable()->searchable(),
+            Column::make("Email", "email")
+                ->sortable()->searchable(),
+            Column::make("Created at", "created_at")
+                ->sortable(),
+            Column::make("Updated at", "updated_at")
+                ->sortable(),
+        ];
+    }
+}

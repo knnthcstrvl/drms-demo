@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Livewire;
+
+use Rappasoft\LaravelLivewireTables\DataTableComponent;
+use Rappasoft\LaravelLivewireTables\Views\Column;
+use Rappasoft\LaravelLivewireTables\Views\Filters\SelectFilter;
+use Rappasoft\LaravelLivewireTables\Views\Columns\ButtonGroupColumn;
+use Rappasoft\LaravelLivewireTables\Views\Columns\LinkColumn;
+use App\Models\Student;
+
+class StudentTable extends DataTableComponent
+{
+    protected $model = Student::class;
+
+    public function columns(): array {
+        return [
+            ButtonGroupColumn::make('Actions')
+            ->attributes(function($row) {
+                return [
+                    'class' => 'space-x-2 flex justify-center',
+                ];
+            })
+            ->buttons([
+                LinkColumn::make('View')
+                    ->title(fn($row) => '<i class="fas fa-eye"></i>')
+                    ->location(fn($row) => route('document-view', $row->student_number))
+                    ->attributes(function($row) {
+                        return [
+                            'class' => 'text-primary cursor-pointer dark:text-purple-500',
+                            'title' => 'View ' . $row->name,
+                            'data-tooltip' => 'View ' . $row->name,
+                        ];
+                    })
+                    ->html(),
+                LinkColumn::make('Download')
+                    ->title(fn($row) => '<i class="fas fa-download"></i>')
+                    ->location(fn($row) => route('document-download', ['selected' => $row->student_number, 'download' => true]))
+                    ->attributes(function($row) {
+                        return [
+                            'class' => 'text-secondary cursor-pointer',
+                            'title' => 'Download ' . $row->name,
+                            'data-tooltip' => 'Download ' . $row->name,
+                        ];
+                    })
+                    ->html(),
+                LinkColumn::make('Print')
+                        ->title(fn ($row) => '<i class="fas fa-print"></i>')
+                        ->location(fn($row) => 'javascript:void(0)')
+                        ->attributes(function ($row) {
+                            return [
+                                'class' => 'text-cyan-500 cursor-pointer',
+                                'title' => 'Print ' . $row->name,
+                                'data-tooltip' => 'Print ' . $row->name,
+                                'onclick' => "openPrintWindow('" . addslashes($row->student_number) . "')",
+                            ];
+                        })
+                        ->html(),
+            ]),
+            Column::make("Last name", "last_name")
+                ->sortable()->searchable(),
+            Column::make("First name", "first_name")
+                ->sortable()->searchable(),
+            Column::make("Middle name", "middle_name")
+                ->sortable()->searchable(),
+            Column::make("Extension name", "extension_name")
+                ->sortable()->searchable(),
+            Column::make("Student number", "student_number")
+                ->sortable()->searchable(),
+            Column::make("Birth date", "birth_date")
+                ->sortable()->searchable(),
+            Column::make("College", "college")
+                ->sortable()->searchable(),
+            Column::make("Course", "course")
+                ->sortable()->searchable(),
+            Column::make("Year graduated", "year_graduated")
+                ->sortable()->searchable(),
+            Column::make("Last year attended", "last_year_attended")
+                ->sortable()->searchable(),
+        ];
+    }
+
+    public function configure(): void {
+        $this->setPrimaryKey('student_number');
+
+        $this->useComputedPropertiesDisabled();
+
+        $this->setBulkActions([
+            'downloadSelected' => 'Download',
+        ]);
+    }
+
+    public function downloadSelected()
+    {
+        $selectedItems = $this->getSelected();
+    
+        if (empty($selectedItems)) {
+            session()->flash('error', 'No items selected for download.');
+            return;
+        }
+    
+        return redirect()->route('documents-download-bulk', ['selected' => $selectedItems]);
+    }
+    
+    public function filters(): array
+    {
+        return [
+            SelectFilter::make('Active', 'user_status')
+        ];
+    }
+}

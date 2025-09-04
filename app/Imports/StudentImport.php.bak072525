@@ -1,0 +1,128 @@
+<?php
+
+namespace App\Imports;
+
+use App\Models\Student;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\{ToCollection, WithHeadingRow};
+
+class StudentImport implements ToCollection, WithHeadingRow
+{
+    protected $inserted;
+    protected $updated;
+
+    public function __construct(&$inserted, &$updated) {
+        $this->inserted = &$inserted;
+        $this->updated = &$updated;
+    }
+
+    public function collection(Collection $rows) {
+        foreach ($rows as $row) {
+
+            if (!empty($row['studentnumber'])) {
+                $student = Student::where('student_number', $row['studentnumber'])->first();
+    
+                if ($student) {
+                    $student->update([
+                        'last_name' => $row['lname'],
+                        'first_name' => $row['fname'],
+                        'middle_name' => $row['mname'],
+                        'birth_date' => $row['birthdateformatted'],
+                        'program' => $row['program'],
+                        'year_graduated' => $row['yeargraduatedformatted'],
+                        'date_time_updated' => now(),
+                    ]);
+
+                    $this->updated++;
+                } else {
+                    $studentFullName = Student::where('last_name', $row['lname'])
+                        ->where('first_name', $row['fname'])
+                        ->where('middle_name', $row['mname'])
+                        ->first();
+
+                    if ($studentFullName) {
+                        Student::create([
+                            'last_name' => $row['lname'],
+                            'first_name' => $row['fname'],
+                            'middle_name' => $row['mname'],
+                            'birth_date' => $row['birthdateformatted'],
+                            'student_number' => $row['studentnumber'],
+                            'filename' => $row['filename'],
+                            'program' => $row['program'],
+                            'year_graduated' => $row['yeargraduatedformatted'],
+                            'doc_id' => $row['docid'],
+                            'date_time_created' => now(),
+                        ]);
+    
+                        $this->inserted++;
+                    } else {
+                        Student::create([
+                            'last_name' => $row['lname'],
+                            'first_name' => $row['fname'],
+                            'middle_name' => $row['mname'],
+                            'birth_date' => $row['birthdateformatted'],
+                            'student_number' => $row['studentnumber'],
+                            'filename' => $row['filename'],
+                            'program' => $row['program'],
+                            'year_graduated' => $row['yeargraduatedformatted'],
+                            'doc_id' => $row['docid'],
+                            'date_time_created' => now(),
+                        ]);
+    
+                        $this->inserted++;
+                    }
+                }
+            } else {
+                if (!empty($row['last_name'])) {
+                     $studentFullName = Student::where('last_name', $row['lname'])
+                        ->where('first_name', $row['fname'])
+                        ->where('middle_name', $row['mname'])
+                        ->first();
+
+                    if ($studentFullName) {
+                        $studentFullName->update([
+                            'birth_date' => $row['birthdateformatted'],
+                            'student_number' => $row['studentnumber'],
+                            'program' => $row['program'],
+                            'year_graduated' => $row['yeargraduatedformatted'],
+                            'date_time_updated' => now(),
+                        ]);
+
+                        $this->updated++;
+                    } else {
+                        Student::create([
+                            'last_name' => $row['lname'],
+                            'first_name' => $row['fname'],
+                            'middle_name' => $row['mname'],
+                            'birth_date' => $row['birthdateformatted'],
+                            'student_number' => $row['studentnumber'],
+                            'filename' => $row['filename'],
+                            'program' => $row['program'],
+                            'year_graduated' => $row['yeargraduatedformatted'],
+                            'doc_id' => $row['docid'],
+                            'date_time_created' => now(),
+                        ]);
+
+                        $this->inserted++;
+                    }
+                }
+                else {
+                    Student::create([
+                        'last_name' => $row['lname'],
+                        'first_name' => $row['fname'],
+                        'middle_name' => $row['mname'],
+                        'birth_date' => $row['birthdateformatted'],
+                        'student_number' => $row['studentnumber'],
+                        'filename' => $row['filename'],
+                        'program' => $row['program'],
+                        'year_graduated' => $row['yeargraduatedformatted'],
+                        'doc_id' => $row['docid'],
+                        'date_time_created' => now(),
+                    ]);
+
+                    $this->inserted++;
+                }
+            }
+        }
+    }    
+}

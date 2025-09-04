@@ -1,0 +1,165 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use App\Models\Student;
+
+class MatchDocumentFiles extends Command
+{
+    protected $signature = 'documents:match {--csv-file=} {--dry-run}';
+    protected $description = 'Match document filenames to student records by student number or name';
+
+    public function handle()
+    {
+        $csvFile = $this->option('csv-file');
+        $dryRun = $this->option('dry-run');
+
+        if ($csvFile && file_exists($csvFile)) {
+            $this->matchFromCsv($csvFile, $dryRun);
+        } else {
+            $this->matchFromDirectory($dryRun);
+        }
+    }
+
+    private function matchFromCsv($csvFile, $dryRun = false)
+    {
+        $this->info('📄 Reading filenames from CSV...');
+
+        $filenames = [];
+
+        if (($handle = fopen($csvFile, 'r')) !== false) {
+            while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+                foreach ($data as $entry) {
+                    $entry = trim($entry);
+                    if (!empty($entry) && pathinfo($entry, PATHINFO_EXTENSION) === 'pdf') {
+                        $filenames[] = $entry;
+                    }
+                }
+            }
+            fclose($handle);
+        }
+
+        $this->matchFiles($filenames, $dryRun);
+    }
+
+    private function matchFromDirectory($dryRun = false)
+    {
+        $this->info('📂 Scanning storage/app/public/documents/...');
+
+        $documentsPath = storage_path('app/public/documents/');
+        $filenames = [];
+
+        if (is_dir($documentsPath)) {
+            foreach (scandir($documentsPath) as $file) {
+                if (pathinfo($file, PATHINFO_EXTENSION) === 'pdf') {
+                    $filenames[] = $file;
+                }
+            }
+        }
+
+        $this->matchFiles($filenames, $dryRun);
+    }
+
+    private function matchFiles(array $filenames, $dryRun = false)
+    {
+        $students = Student::all();
+        $matched = 0;
+        $unmatched = [];
+        $matchedList = [];
+
+        $this->info("📌 Students loaded: " . $students->count());
+        $this->info("📄 Files to process: " . count($filenames));
+
+        foreach ($filenames as $filename) {
+            $this->line("🔍 Processing: $filename");
+
+            $student = $this->findMatchingStudent($students, $filename);
+
+            if ($student) {
+                if (!$dryRun) {
+                    $student->doc_path = $filename;
+                    $student->save();
+                }
+
+                $matchedList[] = [
+                    'filename' => $filename,
+                    'student_number' => $student->student_number,
+                    'name' => "{$student->last_name}, {$student->first_name}",
+                ];
+
+                $matched++;
+            } else {
+                $unmatched[] = $filename;
+            }
+        }
+
+        // ✅ FINAL SUMMARY
+        $this->info("\n🎯 MATCHING COMPLETE!");
+        $this->info("✔ Total matched: $matched");
+        $this->info("✖ Total unmatched: " . count($unmatched));
+
+        if (!empty($matchedList)) {
+            $this->line("\n📋 Matched files:");
+            foreach ($matchedList as $match) {
+                $this->line("✓ {$match['filename']} -> {$match['student_number']} - {$match['name']}");
+            }
+        }
+
+        if ($dryRun) {
+            $this->warn("\n💡 DRY RUN: No database changes were made.");
+        }
+    }
+
+    private function findMatchingStudent($students, $filename)
+    {
+        $baseFilename = pathinfo($filename, PATHINFO_FILENAME);
+        $cleanFilename = $this->cleanString($baseFilename);
+        $this->line("🔎 Cleaned filename: $cleanFilename");
+
+        // Strategy 1: Match by student number
+        foreach ($students as $student) {
+            $studentNumber = $this->cleanString($student->student_number);
+            if (!empty($studentNumber) && strpos($cleanFilename, $studentNumber) !== false) {
+                return $student;
+            }
+        }
+
+        // Strategy 2: Match by exact last + first name
+        foreach ($students as $student) {
+            $lname = $this->cleanString($student->last_name);
+            $fname = $this->cleanString($student->first_name);
+            if (
+                strlen($lname) >= 3 && strlen($fname) >= 3 &&
+                strpos($cleanFilename, $lname) !== false &&
+                strpos($cleanFilename, $fname) !== false
+            ) {
+                return $student;
+            }
+        }
+
+        // Strategy 3: Fuzzy contains both names
+        foreach ($students as $student) {
+            $lname = $this->cleanString($student->last_name);
+            $fname = $this->cleanString($student->first_name);
+            if (
+                $this->containsName($cleanFilename, $lname) &&
+                $this->containsName($cleanFilename, $fname)
+            ) {
+                return $student;
+            }
+        }
+
+        return null;
+    }
+
+    private function containsName($haystack, $needle)
+    {
+        return strlen($needle) >= 3 && strpos($haystack, $needle) !== false;
+    }
+
+    private function cleanString($string)
+    {
+        return strtoupper(preg_replace('/[^A-Z0-9]/', '', $string));
+    }
+}
