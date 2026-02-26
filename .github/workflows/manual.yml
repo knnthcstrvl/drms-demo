@@ -1,0 +1,51 @@
+# This is a basic workflow that is manually triggered
+
+name: Deploy Manually
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      name:
+        # Friendly description to be shown in the UI instead of 'name'
+        description: 'Deploy updates'
+        # Default value if no value is explicitly provided
+        default: 'Deploy updates'
+        # Input has to be provided for the workflow to run
+        required: true
+        # The data type of the input
+        type: string
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  deploy:
+    runs-on: student-records
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to /var/www/html/drms via rsync
+        run: |
+          echo "Syncing Laravel app to /var/www/html/drms"
+          sudo rsync -av --delete --exclude=".git" --exclude="node_modules" --no-times --exclude=".env" ./ /var/www/html/drms
+
+      - name: Set permissions
+        run: |
+          sudo chown -R www-data:systemadmin /var/www/html/drms
+          sudo chmod -R 775 /var/www/html/drms/storage /var/www/html/drms/bootstrap/cache
+
+      - name: Install PHP dependencies
+        run: |
+          cd /var/www/html/drms
+          composer install --no-dev --optimize-autoloader
+          composer update
+          npm install && npm run build
+          npm update
+# composer require laravel/sanctum:*
+      - name: Run Laravel setup commands
+        run: |
+          cd /var/www/html/drms
+          php artisan storage:link

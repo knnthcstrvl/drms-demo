@@ -1,4 +1,5 @@
 <x-authentication-layout>
+    <!-- Testing lang - MFAImplementation branch-->
     <h1 class="text-3xl text-gray-800 dark:text-gray-100 font-bold mb-6">{{ __('Confirm access') }}</h1>
     <div x-data="{ recovery: false }">
         <div class="mb-4" x-show="! recovery">

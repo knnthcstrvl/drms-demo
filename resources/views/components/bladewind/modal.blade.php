@@ -192,30 +192,16 @@
                 <div class="modal-footer @if($stretch_action_buttons) flex flex-col-reverse @endif
                 @if($center_action_buttons || $size == 'tiny') text-center @else text-{{$align_buttons}} @endif
                 bg-gray-100 dark:bg-dark-800/50 border-t border-t-gray-200/60 dark:border-t-dark-600/50 py-3 px-6 rounded-br-lg rounded-bl-lg {{ $footer_css }}">
-                    <!-- <x-bladewind::button
+                    <x-bladewind::button
                             type="secondary"
                             size="{{$button_size}}"
                             onclick="{!! $cancelAction !!}"
-                            class="cancel {{ (($stretch_action_buttons) ? 'block w-full mb-3' : '') }} {{ $cancelCss }}">{{$cancel_button_label}}</x-bladewind::button> -->
-                    
-                    <button onclick="{!! $cancelAction !!}" class="{{ $cancelCss }} btn bg-gray-300/90 text-default hover:bg-gray-300 dark:bg-gray1 dark:text-dafault dark:hover:bg-gray1/90">
-                        <svg class="fill-current shrink-0 xs:hidden" width="16" height="16" viewBox="0 0 16 16">
-                            <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 1-1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
-                        </svg>
-                        <span class="max-xs:sr-only capitalize">{{$cancel_button_label}}</span>
-                    </button>
+                            class="cancel {{ (($stretch_action_buttons) ? 'block w-full mb-3' : '') }} {{ $cancelCss }}">{{$cancel_button_label}}</x-bladewind::button>
 
-                    <!-- <x-bladewind::button
+                    <x-bladewind::button
                             size="{{$button_size}}"
                             onclick="{!! $okAction !!}"
-                            class="okay {{ (($stretch_action_buttons) ? 'block w-full mb-3 !ml-0' : 'ml-3') }} {{ $okCss }}">{{$ok_button_label}}</x-bladewind::button> -->
-
-                    <button onclick="{!! $okAction !!}" class="{{ $okCss }} btn ml-2 bg-primary-500/90 text-white hover:bg-primary-500 dark:bg-gray1 dark:text-dafault dark:hover:bg-gray1/90">
-                        <svg class="fill-current shrink-0 xs:hidden" width="16" height="16" viewBox="0 0 16 16">
-                            <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 1-1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
-                        </svg>
-                        <span class="max-xs:sr-only capitalize">{{$ok_button_label}}</span>
-                    </button>
+                            class="okay {{ (($stretch_action_buttons) ? 'block w-full mb-3 !ml-0' : 'ml-3') }} {{ $okCss }}">{{$ok_button_label}}</x-bladewind::button>
                 </div>
             @endif
         </div>

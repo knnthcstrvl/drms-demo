@@ -1,19 +1,42 @@
-/.phpunit.cache
+/vendor
+/storage/*.key
+/storage/app/public/*
+/bootstrap/cache/*
+.env
+.env.*
+auth.json
+
 /node_modules
 /public/build
 /public/hot
-/public/storage
-/storage/*.key
-/vendor
-.env
-.env.backup
-.env.production
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+/.phpunit.cache
 .phpunit.result.cache
-Homestead.json
-Homestead.yaml
-auth.json
-npm-debug.log
-yarn-error.log
-/.fleet
+/.phpunit.result.cache
+
+*.log
+
 /.idea
 /.vscode
+/.fleet
+
+.DS_Store
+Thumbs.db
+
+Homestead.json
+Homestead.yaml
+.valet
+
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Optional (uncomment if needed)
+# /public/storage
+# /public/images
+# /storage/logs/*
