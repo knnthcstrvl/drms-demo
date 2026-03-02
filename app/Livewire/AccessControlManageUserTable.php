@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Models\User;
 use App\Models\AuditLog;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Builder;
 use Rappasoft\LaravelLivewireTables\DataTableComponent;
 use Rappasoft\LaravelLivewireTables\Views\Column;
@@ -138,12 +137,6 @@ class AccessControlManageUserTable extends DataTableComponent
                 $user = User::where('username', $this->userToDelete)->first();
                 
                 if ($user) {
-                    // Delete avatar if exists
-                    $avatarPath = 'avatars/' . $user->username . '.jpg';
-                    if (Storage::disk('public')->exists($avatarPath)) {
-                        Storage::disk('public')->delete($avatarPath);
-                    }
-
                     // Delete the user
                     $user->delete();
 
@@ -171,12 +164,6 @@ class AccessControlManageUserTable extends DataTableComponent
 
                 if ($users->count() > 0) {
                     foreach ($users as $user) {
-                        // Delete avatar if exists
-                        $avatarPath = 'avatars/' . $user->username . '.jpg';
-                        if (Storage::disk('public')->exists($avatarPath)) {
-                            Storage::disk('public')->delete($avatarPath);
-                        }
-
                         // Audit log for each
                         AuditLog::create([
                             'user' => auth()->user()->full_name,

@@ -1,3 +1,13 @@
+<div
+    x-data="{ holdProcessing: false, holdTimer: null }"
+    x-init="@this.on('saved', () => {
+        clearTimeout(holdTimer);
+        holdProcessing = true;
+        holdTimer = setTimeout(() => {
+            holdProcessing = false;
+            showNotification('Success', '{{ __('Profile information updated successfully.') }}', 'success');
+        }, 2000);
+    })">
 <x-form-section submit="updateProfileInformation">
     <x-slot name="title">
         {{ __('Profile Information') }}
@@ -8,6 +18,7 @@
     </x-slot>
 
     <x-slot name="form">
+        <div class="col-span-6 contents" wire:loading.remove wire:target="updateProfileInformation" x-bind:class="{ 'hidden': holdProcessing }">
         <!-- Profile Photo -->
         @if (Laravel\Jetstream\Jetstream::managesProfilePhotos())
             <div x-data="{photoName: null, photoPreview: null}" class="col-span-6 sm:col-span-4">
@@ -65,15 +76,28 @@
             <x-input id="email" type="email" class="mt-1 block w-full" wire:model.live="state.email" required autocomplete="username" />
             <x-input-error for="email" class="mt-2" />
         </div>
+        </div>
+
+        <div class="col-span-6" wire:loading wire:target="updateProfileInformation">
+            <x-bladewind.processing
+                name="settings-profile-updating"
+                hide="false"
+                message="Updating profile, please wait..."
+                class="mt-2" />
+        </div>
+        <div class="col-span-6" x-show="holdProcessing" x-cloak>
+            <x-bladewind.processing
+                name="settings-profile-updated-wait"
+                hide="false"
+                message="Updating profile, please wait..."
+                class="mt-2" />
+        </div>
     </x-slot>
 
     <x-slot name="actions">
-        <x-action-message class="me-3" on="saved">
-            {{ __('Saved.') }}
-        </x-action-message>
-
         <x-button wire:loading.attr="disabled" wire:target="photo">
             {{ __('Save') }}
         </x-button>
     </x-slot>
 </x-form-section>
+</div>

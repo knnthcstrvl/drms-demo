@@ -32,6 +32,7 @@ class User extends Authenticatable
         'role',
         'access_level',
         'status',
+        'must_change_password',
         'profile_photo_path',
         'date_time_created',
         'date_time_updated',
@@ -44,6 +45,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'access_levels' => 'array',
+        'must_change_password' => 'boolean',
         'date_time_created' => 'datetime',
         'date_time_updated' => 'datetime',
     ];

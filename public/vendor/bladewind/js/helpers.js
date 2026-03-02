@@ -302,10 +302,14 @@ const animateCSS = (element, animation) =>
  * @see {@link https://bladewindui.com/extra/helper-functions#showmodal}
  */
 const showModal = (element) => {
-    unhide(`.bw-${element}-modal`);
+    const modalSelector = `.bw-${element}-modal`;
+    const modalEl = domEl(modalSelector);
+    if (!modalEl || !modalEl.classList.contains('hidden')) return;
+    modalEl.dataset.bwOpenedAt = String(Date.now());
+    unhide(modalSelector);
     document.body.classList.add('overflow-hidden');
-    domEl(`.bw-${element}-modal`).focus();
-    let index = (currentModal.length === 0) ? 0 : currentModal.length + 1;
+    modalEl.focus();
+    let index = currentModal.length;
     animateCSS(`.bw-${element}`, 'zoomIn').then(() => {
         currentModal[index] = element;
     });
@@ -340,11 +344,19 @@ const trapFocusInModal = (event) => {
  * @see {@link https://bladewindui.com/extra/helper-functions#hidemodal}
  */
 const hideModal = (element) => {
+    const modalSelector = `.bw-${element}-modal`;
+    const modalEl = domEl(modalSelector);
+    if (!modalEl || modalEl.classList.contains('hidden')) return;
     animateCSS(`.bw-${element}`, 'zoomOut').then(() => {
-        hide(`.bw-${element}-modal`);
-        currentModal.pop();
+        hide(modalSelector);
+        for (let i = currentModal.length - 1; i >= 0; i--) {
+            if (currentModal[i] === element) {
+                currentModal.splice(i, 1);
+                break;
+            }
+        }
         document.body.classList.remove('overflow-hidden');
-        domEl(`.bw-${element}-modal`).removeEventListener('keydown', trapFocusInModal);
+        modalEl.removeEventListener('keydown', trapFocusInModal);
     });
 };
 

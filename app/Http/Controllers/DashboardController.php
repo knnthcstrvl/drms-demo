@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Fortify\PasswordValidationRules;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\AuditLog;
@@ -10,6 +13,8 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    use PasswordValidationRules;
+
     /**
      * Display the dashboard main page.
      *
@@ -17,6 +22,48 @@ class DashboardController extends Controller
      */
     public function index() {
         return view('pages.dashboard.dashboard', $this->dashboardMainData());
+    }
+
+    public function forcePasswordChange(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user || !$user->must_change_password) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password change is not required for this account.',
+            ], 400);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'current_password' => ['required', 'string', 'current_password:web'],
+            'password' => array_merge($this->passwordRules(), ['different:current_password']),
+        ], [
+            'current_password.current_password' => 'The current password does not match the temporary password provided by the administrator.',
+            'password.different' => 'Your new password must be different from the temporary password provided by the administrator.',
+        ]);
+
+        if ($validator->fails()) {
+            $errors = $validator->errors();
+            $toastMessage = $errors->first('password') ?: 'Please correct the highlighted fields.';
+
+            return response()->json([
+                'success' => false,
+                'message' => $toastMessage,
+                'errors' => $errors,
+            ], 422);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($request->password),
+            'must_change_password' => false,
+            'date_time_updated' => now(),
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password updated successfully.',
+        ]);
     }
 
     public function dashboardMainData() {

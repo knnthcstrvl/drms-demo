@@ -34,13 +34,6 @@ class AddStudentController extends Controller
     
             $validatedData['status'] = 'Active';
             $validatedData['date_time_created'] = now();
-    
-            $avatar = Avatar::create(strtoupper($validatedData['full_name']))
-                ->setBackground('#3B82F633')
-                ->setForeground('#1D4ED8')
-                ->getImageObject();
-            $avatarPath = storage_path('app/public/avatars/' . $validatedData['username'] . '.jpg');
-            $avatar->save($avatarPath, 100);
 
             $user = User::create($validatedData);
 

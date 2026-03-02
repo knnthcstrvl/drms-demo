@@ -22,7 +22,7 @@ use App\Http\Controllers\AddStudentController;
 
 Route::redirect('/', 'dashboard');
 
-Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+Route::middleware(['auth:sanctum', 'verified', 'force.password.change'])->group(function () {
 
     // Route for the getting the data feed
     Route::get('/json-data-feed', [DashboardController::class, 'jsonDataFeed'])->name('json_data_feed');
@@ -34,6 +34,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/dashboard/force-password-change', [DashboardController::class, 'forcePasswordChange'])->name('force-password-change.update');
     // Route::get('/dashboard/analytics', [DashboardController::class, 'analytics'])->name('analytics');
 
     // Document

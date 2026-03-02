@@ -4,11 +4,9 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Laravel\Jetstream\Jetstream;
-use Laravolt\Avatar\Facade as Avatar;
 
 class CreateNewUser implements CreatesNewUsers
 {
@@ -36,13 +34,6 @@ class CreateNewUser implements CreatesNewUsers
         //     'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
         // ])->validate();
 
-        $avatarPath = 'avatars/' . $input['username'] . '.jpg';
-
-        $avatar = Avatar::create($input['full_name'])
-            ->setBackground('#F0D9FF')
-            ->setForeground('#5C297C')
-            ->save(storage_path('app/public/' . $avatarPath), 100);
-        
         return User::create([
             'full_name' => $input['full_name'],
             'username' => $input['username'],
@@ -51,7 +42,7 @@ class CreateNewUser implements CreatesNewUsers
             'password' => Hash::make($input['password']),
             'access_level' => 'View,Download,Print',
             'status' => 'Active',
-            'profile_photo_path' => $avatarPath,
+            'profile_photo_path' => null,
             'date_time_created' => now(),
         ]);
     }

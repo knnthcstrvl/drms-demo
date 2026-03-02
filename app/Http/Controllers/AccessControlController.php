@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use App\Models\User;
 use App\Models\AuditLog;
 use App\Models\DataFeed;
-use Laravolt\Avatar\Facade as Avatar;
 
 class AccessControlController extends Controller
 {
@@ -40,14 +39,10 @@ class AccessControlController extends Controller
             unset($validatedData['confirm_password']);
     
             $validatedData['status'] = 'Active';
+            if ($this->hasMustChangePasswordColumn()) {
+                $validatedData['must_change_password'] = true;
+            }
             $validatedData['date_time_created'] = now();
-    
-            $avatar = Avatar::create(strtoupper($validatedData['full_name']))
-                ->setBackground('#EBE8FF')
-                ->setForeground('#5C297C')
-                ->getImageObject();
-            $avatarPath = storage_path('app/public/avatars/' . $validatedData['username'] . '.jpg');
-            $avatar->save($avatarPath, 100);
 
             $user = User::create($validatedData);
 
@@ -196,6 +191,7 @@ class AccessControlController extends Controller
             $user->update([
                 'password' => Hash::make($validatedData['password']),
                 'date_time_updated' => now(),
+                ...($this->hasMustChangePasswordColumn() ? ['must_change_password' => true] : []),
             ]);
 
             // Log the password reset in AuditLog
@@ -222,5 +218,16 @@ class AccessControlController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function hasMustChangePasswordColumn(): bool
+    {
+        static $hasColumn = null;
+
+        if ($hasColumn === null) {
+            $hasColumn = Schema::hasColumn('users', 'must_change_password');
+        }
+
+        return $hasColumn;
     }
 }

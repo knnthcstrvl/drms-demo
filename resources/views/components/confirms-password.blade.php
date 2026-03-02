@@ -8,39 +8,48 @@
     {{ $attributes->wire('then') }}
     x-data
     x-ref="span"
-    x-on:click="$wire.startConfirmingPassword('{{ $confirmableId }}')"
+    x-on:click="
+        if (typeof showModal === 'function') showModal('confirm-password-modal');
+        $wire.startConfirmingPassword('{{ $confirmableId }}');
+    "
     x-on:password-confirmed.window="setTimeout(() => $event.detail.id === '{{ $confirmableId }}' && $refs.span.dispatchEvent(new CustomEvent('then', { bubbles: false })), 250);"
 >
     {{ $slot }}
 </span>
 
 @once
-<x-dialog-modal wire:model.live="confirmingPassword">
-    <x-slot name="title">
-        {{ $title }}
-    </x-slot>
+    <div
+        x-data="{}"
+        x-on:password-confirmed.window="
+            if (typeof hideModal === 'function') hideModal('confirm-password-modal');
+        "
+    >
+        <x-bladewind.modal
+            wire:ignore.self
+            name="confirm-password-modal"
+            size="large"
+            title="{{ $title }}"
+            ok_button_label="{{ $button }}"
+            ok_button_action="document.getElementById('confirm-password-modal-submit').click()"
+            cancel_button_action="document.getElementById('confirm-password-modal-cancel').click()"
+            backdrop_can_close="false">
 
-    <x-slot name="content">
-        {{ $content }}
+            <div class="space-y-4">
+                <div>{{ $content }}</div>
 
-        <div class="mt-4" x-data="{}" x-on:confirming-password.window="setTimeout(() => $refs.confirmable_password.focus(), 250)">
-            <x-input type="password" class="mt-1 block w-3/4" placeholder="{{ __('Password') }}"
-                        x-ref="confirmable_password"
-                        wire:model="confirmablePassword"
-                        wire:keydown.enter="confirmPassword" />
+                <x-input
+                    type="password"
+                    class="mt-1 block w-full"
+                    placeholder="{{ __('Password') }}"
+                    x-ref="confirmPasswordInput"
+                    wire:model="confirmablePassword"
+                    wire:keydown.enter="confirmPassword" />
 
-            <x-input-error for="confirmable_password" class="mt-2" />
-        </div>
-    </x-slot>
+                <x-input-error for="confirmable_password" class="mt-2" />
 
-    <x-slot name="footer">
-        <x-secondary-button wire:click="stopConfirmingPassword" wire:loading.attr="disabled">
-            {{ __('Cancel') }}
-        </x-secondary-button>
-
-        <x-button class="ml-3" dusk="confirm-password-button" wire:click="confirmPassword" wire:loading.attr="disabled">
-            {{ $button }}
-        </x-button>
-    </x-slot>
-</x-dialog-modal>
+                <button type="button" id="confirm-password-modal-cancel" class="hidden" wire:click="stopConfirmingPassword"></button>
+                <button type="button" id="confirm-password-modal-submit" class="hidden" dusk="confirm-password-button" wire:click="confirmPassword"></button>
+            </div>
+        </x-bladewind.modal>
+    </div>
 @endonce
