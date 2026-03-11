@@ -27,7 +27,7 @@
         
         <!-- Styles -->
         @livewireStyles
-        
+
         <!-- Rappasoft Style -->
         @rappasoftTableStyles
         @rappasoftTableThirdPartyStyles

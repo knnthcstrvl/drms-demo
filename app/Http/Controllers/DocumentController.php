@@ -10,6 +10,32 @@ use Illuminate\Support\Facades\Log;
 
 class DocumentController extends Controller
 {
+    private function resolveDocumentFilePath($document): ?string
+    {
+        if (!$document || !$document->doc_path) {
+            return null;
+        }
+
+        $filename = basename($document->doc_path);
+
+        if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) !== 'pdf') {
+            $filename .= '.pdf';
+        }
+
+        return storage_path("app/public/documents/{$filename}");
+    }
+
+    private function buildDownloadFilename(Student $student): string
+    {
+        $filename = $student->filename ?: 'document';
+
+        if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) !== 'pdf') {
+            $filename .= '.pdf';
+        }
+
+        return $filename;
+    }
+
     public function index ()
     {
         return view('pages.document.document', ['students' => null]);
@@ -36,10 +62,9 @@ class DocumentController extends Controller
             return redirect()->route('document');
         }
 
-        $filename = basename($document->doc_path);
-        $filePath = storage_path("app/public/documents/{$filename}.pdf");
+        $filePath = $this->resolveDocumentFilePath($document);
 
-        if (!file_exists($filePath)) {
+        if (!$filePath || !file_exists($filePath)) {
             session()->flash('error_notification', "The document '{$selected}' is not available right now. It may have been moved or deleted.");
             return redirect()->route('document');
         }
@@ -47,7 +72,7 @@ class DocumentController extends Controller
         if (request()->has('file') && request()->get('file') === 'true') {
             return response()->file($filePath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . $student->filename . '.pdf"'
+                'Content-Disposition' => 'inline; filename="' . $this->buildDownloadFilename($student) . '"'
             ]);
         }
 
@@ -93,10 +118,9 @@ class DocumentController extends Controller
             return redirect()->route('document')->with('error_notification', "We couldn't find the document '{$selected}'. It may not be available at the moment.");
         }
 
-        $filename = basename($document->doc_path);
-        $filePath = storage_path("app/public/documents/{$filename}.pdf");
+        $filePath = $this->resolveDocumentFilePath($document);
 
-        if (!file_exists($filePath)) {
+        if (!$filePath || !file_exists($filePath)) {
             return redirect()->route('document')->with('error_notification', "The document '{$selected}' is not available right now. It may have been moved or deleted.");
         }
 
@@ -111,7 +135,7 @@ class DocumentController extends Controller
             'last_name' => $student->last_name,
         ]);
 
-        return response()->download($filePath, $student->filename . '.pdf', [
+        return response()->download($filePath, $this->buildDownloadFilename($student), [
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
             'Pragma' => 'no-cache',
             'Expires' => '0',
@@ -154,11 +178,10 @@ class DocumentController extends Controller
                     continue; // Skip if document not found
                 }
 
-                $documentFilename = basename($document->doc_path);
-                $filePath = storage_path("app/public/documents/{$documentFilename}.pdf");
+                $filePath = $this->resolveDocumentFilePath($document);
                 
-                if (file_exists($filePath)) {
-                    $zip->addFile($filePath, $student->filename . '.pdf');
+                if ($filePath && file_exists($filePath)) {
+                    $zip->addFile($filePath, $this->buildDownloadFilename($student));
                     $addedFiles++;
 
                     // Log each download in audit
@@ -215,9 +238,8 @@ class DocumentController extends Controller
                 return response()->json(['error' => "We couldn't find the document '{$selected}'. It may not be available at the moment."], 404);
             }
 
-            $filename = basename($document->doc_path);
-            $filePath = storage_path("app/public/documents/{$filename}.pdf");
-            if (!file_exists($filePath)) {
+            $filePath = $this->resolveDocumentFilePath($document);
+            if (!$filePath || !file_exists($filePath)) {
                 return response()->json(['error' => "The document '{$selected}' is not available right now. It may have been moved or deleted."], 404);
             }
 
@@ -245,9 +267,8 @@ class DocumentController extends Controller
             return redirect()->route('document')->with('error_notification', "We couldn't find the document '{$selected}'. It may not be available at the moment.");
         }
 
-        $filename = basename($document->doc_path);
-        $filePath = storage_path("app/public/documents/{$filename}.pdf");
-        if (!file_exists($filePath)) {
+        $filePath = $this->resolveDocumentFilePath($document);
+        if (!$filePath || !file_exists($filePath)) {
             return redirect()->route('document')->with('error_notification', "The document '{$selected}' is not available right now. It may have been moved or deleted.");
         }
 

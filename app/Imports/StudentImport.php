@@ -18,9 +18,25 @@ class StudentImport implements ToCollection, WithHeadingRow
         $this->updated = &$updated;
     }
 
+    private function normalizeFilename(?string $filename): ?string
+    {
+        if ($filename === null) {
+            return null;
+        }
+
+        $filename = trim($filename);
+
+        if ($filename === '') {
+            return null;
+        }
+
+        return preg_replace('/\.pdf$/i', '', $filename);
+    }
+
     public function collection(Collection $rows) {
         foreach ($rows as $row) {
-            $filename = $row['filename'] ?? null;
+            $studentNumber = $row['studentnumberformatted'] ?? $row['studentnumber'] ?? null;
+            $filename = $this->normalizeFilename($row['filenameformatted'] ?? $row['filename'] ?? null);
             $docPath = $filename ? "storage/app/public/documents/{$filename}" : null;
 
             $document = null;
@@ -38,8 +54,8 @@ class StudentImport implements ToCollection, WithHeadingRow
                 $docId = $document->id;
             }
 
-            if (!empty($row['studentnumber'])) {
-                $student = Student::where('student_number', $row['studentnumber'])->first();
+            if (!empty($studentNumber)) {
+                $student = Student::where('student_number', $studentNumber)->first();
 
                 if ($student) {
                     $student->update([
@@ -47,8 +63,10 @@ class StudentImport implements ToCollection, WithHeadingRow
                         'first_name' => $row['fname'],
                         'middle_name' => $row['mname'],
                         'birth_date' => $row['birthdateformatted'],
+                        'filename' => $filename,
                         'program' => $row['program'],
                         'year_graduated' => $row['yeargraduatedformatted'],
+                        'doc_id' => $docId,
                         'date_time_updated' => now(),
                     ]);
 
@@ -65,7 +83,7 @@ class StudentImport implements ToCollection, WithHeadingRow
                             'first_name' => $row['fname'],
                             'middle_name' => $row['mname'],
                             'birth_date' => $row['birthdateformatted'],
-                            'student_number' => $row['studentnumber'],
+                            'student_number' => $studentNumber,
                             'filename' => $filename,
                             'program' => $row['program'],
                             'year_graduated' => $row['yeargraduatedformatted'],
@@ -80,7 +98,7 @@ class StudentImport implements ToCollection, WithHeadingRow
                             'first_name' => $row['fname'],
                             'middle_name' => $row['mname'],
                             'birth_date' => $row['birthdateformatted'],
-                            'student_number' => $row['studentnumber'],
+                            'student_number' => $studentNumber,
                             'filename' => $filename,
                             'program' => $row['program'],
                             'year_graduated' => $row['yeargraduatedformatted'],
@@ -101,9 +119,11 @@ class StudentImport implements ToCollection, WithHeadingRow
                     if ($studentFullName) {
                         $studentFullName->update([
                             'birth_date' => $row['birthdateformatted'],
-                            'student_number' => $row['studentnumber'],
+                            'student_number' => $studentNumber,
+                            'filename' => $filename,
                             'program' => $row['program'],
                             'year_graduated' => $row['yeargraduatedformatted'],
+                            'doc_id' => $docId,
                             'date_time_updated' => now(),
                         ]);
 
@@ -114,7 +134,7 @@ class StudentImport implements ToCollection, WithHeadingRow
                             'first_name' => $row['fname'],
                             'middle_name' => $row['mname'],
                             'birth_date' => $row['birthdateformatted'],
-                            'student_number' => $row['studentnumber'],
+                            'student_number' => $studentNumber,
                             'filename' => $filename,
                             'program' => $row['program'],
                             'year_graduated' => $row['yeargraduatedformatted'],
@@ -130,7 +150,7 @@ class StudentImport implements ToCollection, WithHeadingRow
                         'first_name' => $row['fname'],
                         'middle_name' => $row['mname'],
                         'birth_date' => $row['birthdateformatted'],
-                        'student_number' => $row['studentnumber'],
+                        'student_number' => $studentNumber,
                         'filename' => $filename,
                         'program' => $row['program'],
                         'year_graduated' => $row['yeargraduatedformatted'],
