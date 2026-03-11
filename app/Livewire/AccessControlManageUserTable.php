@@ -12,6 +12,8 @@ use Rappasoft\LaravelLivewireTables\Views\Filters\{SelectFilter,DateRangeFilter}
 
 class AccessControlManageUserTable extends DataTableComponent
 {
+    private const RESET_PASSWORD_ACCESS = 'Reset';
+
     protected $model = User::class;
 
     public $userToDelete = null;
@@ -19,41 +21,54 @@ class AccessControlManageUserTable extends DataTableComponent
     protected $listeners = ['deleteConfirmed'];
 
     public function columns(): array {
+        $canEditUsers = $this->isAdmin();
+        $canResetPasswords = $this->canResetPasswords();
+
+        $buttons = [];
+
+        if ($canEditUsers) {
+            $buttons[] = LinkColumn::make('Edit')
+                ->title(fn($row) => '<i class="fas fa-edit text-blue-500 cursor-pointer"></i>')
+                ->location(fn($row) => route('manage-users-edit', $row->username))
+                ->attributes(fn($row) => [
+                    'class' => 'text-blue-500 cursor-pointer',
+                    'title' => 'Edit ' . $row->name,
+                    'data-tooltip' => 'Edit ' . $row->name,
+                ])
+                ->html();
+        }
+
+        if ($canResetPasswords) {
+            $buttons[] = LinkColumn::make('Reset')
+                ->title(fn($row) => '<i class="fas fa-key text-cyan-500 cursor-pointer"></i>')
+                ->location(fn($row) => route('manage-users-reset', $row->email))
+                ->attributes(fn($row) => [
+                    'class' => 'text-green-500 cursor-pointer',
+                    'title' => 'Reset ' . $row->name,
+                    'data-tooltip' => 'Reset ' . $row->name,
+                ])
+                ->html();
+        }
+
+        if ($canEditUsers) {
+            $buttons[] = LinkColumn::make('Delete')
+                ->title(fn($row) => '<i class="fas fa-trash text-red-500 cursor-pointer"></i>')
+                ->location(fn($row) => 'javascript:void(0)')
+                ->attributes(fn($row) => [
+                    'class' => 'text-red-500 cursor-pointer',
+                    'title' => 'Delete ' . $row->name,
+                    'data-tooltip' => 'Delete ' . $row->name,
+                    'wire:click' => "confirmSingleDelete('" . addslashes($row->username) . "')",
+                ])
+                ->html();
+        }
+
         return [
             Column::make("ID", "id")
                 ->sortable(),
             ButtonGroupColumn::make('Actions')
                 ->attributes(fn($row) => ['class' => 'space-x-2 flex justify-center'])
-                ->buttons([
-                    LinkColumn::make('Edit')
-                        ->title(fn($row) => '<i class="fas fa-edit text-blue-500 cursor-pointer"></i>')
-                        ->location(fn($row) => route('manage-users-edit', $row->username))
-                        ->attributes(fn($row) => [
-                            'class' => 'text-blue-500 cursor-pointer',
-                            'title' => 'Edit ' . $row->name,
-                            'data-tooltip' => 'Edit ' . $row->name,
-                        ])
-                        ->html(),
-                    LinkColumn::make('Reset')
-                        ->title(fn($row) => '<i class="fas fa-key text-cyan-500 cursor-pointer"></i>')
-                        ->location(fn($row) => route('manage-users-reset', $row->email))
-                        ->attributes(fn($row) => [
-                            'class' => 'text-green-500 cursor-pointer',
-                            'title' => 'Reset ' . $row->name,
-                            'data-tooltip' => 'Reset ' . $row->name,
-                        ])
-                        ->html(),
-                    LinkColumn::make('Delete')
-                        ->title(fn($row) => '<i class="fas fa-trash text-red-500 cursor-pointer"></i>')
-                        ->location(fn($row) => 'javascript:void(0)')
-                        ->attributes(fn($row) => [
-                            'class' => 'text-red-500 cursor-pointer',
-                            'title' => 'Delete ' . $row->name,
-                            'data-tooltip' => 'Delete ' . $row->name,
-                            'wire:click' => "confirmSingleDelete('" . addslashes($row->username) . "')",
-                        ])
-                        ->html(),             
-                ]),
+                ->buttons($buttons),
             Column::make('Full Name', 'full_name')
                 ->view('tables.cells.access-control-full-name')
                 ->sortable()
@@ -82,7 +97,7 @@ class AccessControlManageUserTable extends DataTableComponent
             ->setDefaultSort('id', 'desc')
             ->setTrimSearchStringEnabled()
             ->setBulkActions([
-                'deleteSelected' => 'Delete',
+                ...($this->isAdmin() ? ['deleteSelected' => 'Delete'] : []),
             ])
             ->setTdAttributes(function (Column $column, $row, $columnIndex, $rowIndex) {
                 if ($column->isField('username')) {
@@ -119,11 +134,15 @@ class AccessControlManageUserTable extends DataTableComponent
     }
 
     public function confirmSingleDelete($username) {
+        abort_unless($this->isAdmin(), 403, 'Unauthorized access.');
+
         $this->userToDelete = $username;
         $this->dispatch('showDeleteUserModal');
     }
 
     public function deleteSelected() {
+        abort_unless($this->isAdmin(), 403, 'Unauthorized access.');
+
         if (!empty($this->getSelected())) {
             $this->selectedUsers = $this->getSelected();
             $this->dispatch('showDeleteUserModal');
@@ -131,6 +150,8 @@ class AccessControlManageUserTable extends DataTableComponent
     }
 
     public function deleteConfirmed() {
+        abort_unless($this->isAdmin(), 403, 'Unauthorized access.');
+
         try {
             // Single user deletion
             if ($this->userToDelete) {
@@ -289,6 +310,7 @@ class AccessControlManageUserTable extends DataTableComponent
                     'View' => 'View',
                     'Download' => 'Download',
                     'Print' => 'Print',
+                    'Reset' => 'Reset Password',
                 ])
                 ->filter(function (Builder $builder, string $value) {
                     if (!empty($value)) {
@@ -337,5 +359,27 @@ class AccessControlManageUserTable extends DataTableComponent
                         ->where('date_time_updated', '<=', $dateRange['maxDate'] . ' 23:59:59');
                 }),
         ];
+    }
+
+    private function isAdmin(): bool
+    {
+        return auth()->user()?->role === 'Admin';
+    }
+
+    private function canResetPasswords(): bool
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->role === 'Admin') {
+            return true;
+        }
+
+        $accessLevels = array_map('trim', explode(',', (string) $user->access_level));
+
+        return in_array(self::RESET_PASSWORD_ACCESS, $accessLevels, true);
     }
 }

@@ -11,6 +11,8 @@ use App\Models\DataFeed;
 
 class AccessControlController extends Controller
 {
+    private const RESET_PASSWORD_ACCESS = 'Reset';
+
     public function index() {
         $dataFeed = new DataFeed();
         return view('pages.access_control.add-user', compact('dataFeed'));
@@ -88,6 +90,8 @@ class AccessControlController extends Controller
     }
 
     public function manageUsers() {
+        $this->authorizeManageUsers();
+
         $dataFeed = new DataFeed();
         return view('pages.access_control.manage-users', [
             'dataFeed' => new DataFeed(),
@@ -156,6 +160,8 @@ class AccessControlController extends Controller
     }
 
     public function reset($selected = null) {
+        $this->authorizeResetPassword();
+
         $email = User::where('email', $selected)->first();
 
         if (!$email) {
@@ -173,6 +179,8 @@ class AccessControlController extends Controller
 
     public function updateUserPassword(Request $request, $email) {
         try {
+            $this->authorizeResetPassword();
+
             $user = User::where('email', $email)->firstOrFail();
 
             $validatedData = $request->validate([
@@ -229,5 +237,40 @@ class AccessControlController extends Controller
         }
 
         return $hasColumn;
+    }
+
+    private function authorizeManageUsers(): void
+    {
+        if ($this->canResetPasswords()) {
+            return;
+        }
+
+        abort(403, 'Unauthorized access.');
+    }
+
+    private function authorizeResetPassword(): void
+    {
+        if ($this->canResetPasswords()) {
+            return;
+        }
+
+        abort(403, 'Unauthorized access.');
+    }
+
+    private function canResetPasswords(): bool
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->role === 'Admin') {
+            return true;
+        }
+
+        $accessLevels = array_map('trim', explode(',', (string) $user->access_level));
+
+        return in_array(self::RESET_PASSWORD_ACCESS, $accessLevels, true);
     }
 }

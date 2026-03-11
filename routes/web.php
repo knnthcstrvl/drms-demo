@@ -44,17 +44,18 @@ Route::middleware(['auth:sanctum', 'verified', 'force.password.change'])->group(
     Route::get('/documents/download-bulk', [DocumentController::class, 'downloadBulk'])->name('documents-download-bulk');
     Route::get('/document/print/{selected?}', [DocumentController::class, 'print'])->name('document-print');
 
+    Route::get('/access-control/manage-users', [AccessControlController::class, 'manageUsers'])->name('manage-users');
+    Route::get('/access-control/manage-users/reset/{selected?}', [AccessControlController::class, 'reset'])->name('manage-users-reset');
+    Route::put('/access-control/manage-users/reset/submit/{selected?}', [AccessControlController::class, 'updateUserPassword'])->name('manage-users-reset-submit');
+
     Route::middleware(['admin'])->group(function () {
         // Access Control
         Route::get('/access-control/add-user', [AccessControlController::class, 'index'])->name('add-user');
         Route::post('/access-control/add-user-store', [AccessControlController::class, 'store'])->name('add-user-store');
         Route::post('/access-control/add-user/check-username-email', [AccessControlController::class, 'checkUsernameEmail'])->name('access-control.check-username-email');
 
-        Route::get('/access-control/manage-users', [AccessControlController::class, 'manageUsers'])->name('manage-users');
         Route::get('/access-control/manage-users/edit/{selected?}', [AccessControlController::class, 'edit'])->name('manage-users-edit');
         Route::put('/access-control/manage-users/edit/submit/{selected?}', [AccessControlController::class, 'updateUserDetails'])->name('manage-users-edit-submit');
-        Route::get('/access-control/manage-users/reset/{selected?}', [AccessControlController::class, 'reset'])->name('manage-users-reset');
-        Route::put('/access-control/manage-users/reset/submit/{selected?}', [AccessControlController::class, 'updateUserPassword'])->name('manage-users-reset-submit');
 
         // Audit logs
         Route::get('/audit-logs', [AuditLogsController::class, 'index'])->name('audit-logs');

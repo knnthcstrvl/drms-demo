@@ -74,7 +74,12 @@
                             </div>
                         </a>
                     </li>
-                    @if(Auth::user()->role === 'Admin')
+                    @php
+                        $sidebarUser = Auth::user();
+                        $sidebarAccessLevels = array_map('trim', explode(',', (string) $sidebarUser->access_level));
+                        $canManageUsers = $sidebarUser->role === 'Admin' || in_array('Reset', $sidebarAccessLevels, true);
+                    @endphp
+                    @if($canManageUsers)
                     <!-- Access Control -->
                     <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-[linear-gradient(135deg,var(--tw-gradient-stops))] @if(in_array(Request::segment(1), ['access-control'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif" x-data="{ open: {{ in_array(Request::segment(1), ['access-control']) ? 1 : 0 }} }">
                         <a class="block text-gray-800 dark:text-gray-100 truncate transition @if(!in_array(Request::segment(1), ['access-control'])){{ 'hover:text-gray-900 dark:hover:text-white' }}@endif" @click.prevent="open = !open; sidebarExpanded = true">
@@ -95,19 +100,22 @@
                         </a>
                         <div class="lg:hidden lg:sidebar-expanded:block 2xl:block">
                             <ul class="pl-8 mt-1 @if(!in_array(Request::segment(1), ['access-control'])){{ 'hidden' }}@endif" :class="open ? '!block' : 'hidden'">
+                                @if($sidebarUser->role === 'Admin')
                                 <li class="mb-1 last:mb-0">
-                                    <a class="block text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition truncate @if(Route::is('add-user')){{ '!text-primary-500 dark:!text-violet-500' }}@endif" href="{{ route('add-user') }}">
+                                    <a class="block text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition truncate @if(Route::is('add-user*')){{ '!text-primary-500 dark:!text-violet-500' }}@endif" href="{{ route('add-user') }}">
                                         <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Add User</span>
                                     </a>
                                 </li>
+                                @endif
                                 <li class="mb-1 last:mb-0">
-                                    <a class="block text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition truncate @if(Route::is('manage-users')){{ '!text-primary-500 dark:!text-violet-500' }}@endif" href="{{ route('manage-users') }}">
+                                    <a class="block text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition truncate @if(Route::is('manage-users*')){{ '!text-primary-500 dark:!text-violet-500' }}@endif" href="{{ route('manage-users') }}">
                                         <span class="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">Manage Users</span>
                                     </a>
                                 </li>
                             </ul>
                         </div>
                     </li>
+                    @if($sidebarUser->role === 'Admin')
                     <!-- Audit Logs -->
                     <li class="pl-4 pr-3 py-2 rounded-lg mb-0.5 last:mb-0 bg-[linear-gradient(135deg,var(--tw-gradient-stops))] @if(in_array(Request::segment(1), ['audit-logs'])){{ 'from-violet-500/[0.12] dark:from-violet-500/[0.24] to-violet-500/[0.04]' }}@endif" x-data="{ open: {{ in_array(Request::segment(1), ['audit-logs']) ? 1 : 0 }} }">
                         <a class="block text-gray-800 dark:text-gray-100 truncate transition @if(!in_array(Request::segment(1), ['audit-logs'])){{ 'hover:text-gray-900 dark:hover:text-white' }}@endif" href="{{ route('audit-logs') }}" sidebarExpanded = true">
@@ -121,6 +129,7 @@
                             </div>
                         </a>
                     </li>
+                    @endif
                     @endif
                 </ul>
             </div>

@@ -109,6 +109,7 @@
                                     [ 'label' => 'Allow Print', 'value' => 'Print' ],
                                     [ 'label' => 'Allow Import', 'value' => 'Import' ],
                                     [ 'label' => 'Allow Add Student', 'value' => 'Add' ],
+                                    [ 'label' => 'Allow Reset Password', 'value' => 'Reset' ],
                                 ];
                             ?>
                         <x-bladewind.select

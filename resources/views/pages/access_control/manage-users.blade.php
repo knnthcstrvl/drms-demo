@@ -1,6 +1,12 @@
 @section('title','| Access Control')
 
 <x-app-layout>
+    @php
+        $currentUser = Auth::user();
+        $isAdmin = $currentUser->role === 'Admin';
+        $accessLevels = array_map('trim', explode(',', (string) $currentUser->access_level));
+        $canResetPasswords = $isAdmin || in_array('Reset', $accessLevels, true);
+    @endphp
 
     <div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
         <div class="sm:flex sm:justify-between sm:items-center mb-8">
@@ -92,6 +98,7 @@
                                     [ 'label' => 'Allow Print', 'value' => 'Print' ],
                                     [ 'label' => 'Allow Import', 'value' => 'Import' ],
                                     [ 'label' => 'Allow Add Student', 'value' => 'Add' ],
+                                    [ 'label' => 'Allow Reset Password', 'value' => 'Reset' ],
                                 ];
                             ?>
 
@@ -159,7 +166,7 @@
         </x-bladewind.modal>
     @endif
 
-    @if($email)
+    @if($email && $canResetPasswords)
         <x-bladewind.modal
             size="large"
             title="Password Reset"
@@ -229,16 +236,18 @@
         </x-bladewind.modal>
     @endif
 
-    <x-bladewind.modal
-        size="small"
-        title="Delete User"
-        name="delete-user-modal"
-        ok_button_label="Confirm"
-        ok_button_action="confirmDeleteUser()">
-        
-        <span id="delete-message">Are you sure you want to delete this user(s)?</span>
-        
-    </x-bladewind.modal>
+    @if($isAdmin)
+        <x-bladewind.modal
+            size="small"
+            title="Delete User"
+            name="delete-user-modal"
+            ok_button_label="Confirm"
+            ok_button_action="confirmDeleteUser()">
+            
+            <span id="delete-message">Are you sure you want to delete this user(s)?</span>
+            
+        </x-bladewind.modal>
+    @endif
 </x-app-layout>
 
 @if(session('success_notification'))
@@ -360,21 +369,28 @@
     };
 
     window.addEventListener('DOMContentLoaded', () => {
-        showModal('edit-user-modal');
+        @if($username)
+            showModal('edit-user-modal');
+        @endif
     });
 
     window.addEventListener('DOMContentLoaded', () => {
-        showModal('reset-user-modal');
+        @if($email && $canResetPasswords)
+            showModal('reset-user-modal');
+        @endif
     });
     
     window.addEventListener('showDeleteUserModal', () => {
-        showModal('delete-user-modal');
+        @if($isAdmin)
+            showModal('delete-user-modal');
+        @endif
     });
 
     function confirmDeleteUser() {
-        // Use plain JavaScript to dispatch Livewire event
-        window.dispatchEvent(new CustomEvent('deleteConfirmed'));
-        hideModal('delete-user-modal');
+        @if($isAdmin)
+            window.dispatchEvent(new CustomEvent('deleteConfirmed'));
+            hideModal('delete-user-modal');
+        @endif
     }
 
     function showDeleteModal(username) {
@@ -388,7 +404,9 @@
 
     document.addEventListener('livewire:initialized', () => {
         Livewire.on('showDeleteUserModal', () => {
-            showModal('delete-user-modal');
+            @if($isAdmin)
+                showModal('delete-user-modal');
+            @endif
         });
     });
 </script>
