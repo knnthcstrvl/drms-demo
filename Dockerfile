@@ -13,6 +13,10 @@ RUN apk add --no-cache nodejs npm
 
 WORKDIR /var/www/html
 
+# Render builds this Dockerfile. Enable the demo login by default for this
+# deployment; Render service environment variables can still override it.
+ENV DEMO_LOGIN_ENABLED=true
+
 # Copy application files
 COPY . .
 
