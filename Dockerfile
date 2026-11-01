@@ -43,4 +43,4 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 EXPOSE 10000
 
 # Run migrations, seed the demo admin, and start Laravel server binding to $PORT
-CMD php artisan migrate:fresh --force && php artisan migrate --force && php artisan db:seed --class=Database\\Seeders\\DatabaseSeeder --force && php artisan storage:link && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+CMD php artisan migrate:fresh --force && php artisan migrate --force && php artisan db:seed --class=Database\\Seeders\\DatabaseSeeder --force && php artisan storage:link & php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
