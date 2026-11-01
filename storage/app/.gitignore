@@ -1,3 +1,7 @@
 *
-/public/
+!/public/
+/public/*
+!/public/documents/
+/public/documents/*
+!/public/documents/*.pdf
 !.gitignore

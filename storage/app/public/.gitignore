@@ -1,2 +1,5 @@
 *
+!/documents/
+/documents/*
+!/documents/*.pdf
 !.gitignore
