@@ -9,8 +9,12 @@ echo "Building Frontend Assets..."
 npm install
 npm run build
 
-echo "Caching Configuration & Views..."
-php artisan config:cache
+echo "Clearing build-time configuration cache..."
+# Render runtime environment variables may differ from build-time variables.
+# Leave configuration uncached here so the app reads the runtime environment.
+php artisan config:clear
+
+echo "Caching Routes & Views..."
 php artisan route:cache
 php artisan view:cache
 
