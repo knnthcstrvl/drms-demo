@@ -1,7 +1,7 @@
 FROM php:8.2-fpm-alpine
 
 # Install system dependencies & PHP extensions for Laravel & MySQL
-RUN apk add --no-linux-headers --no-cache \
+RUN apk add --no-cache \
     zip unzip git curl libpng-dev libxml2-dev libzip-dev nginx \
     && docker-php-ext-install pdo pdo_mysql bcmath gd zip
 
