@@ -25,7 +25,7 @@ class StudentsTableSeeder extends Seeder
         $currentIndex = 1;
 
         // Create 200 students
-        for ($i = 1; $i <= 200; $i++) {
+        for ($i = 1; $i <= 20; $i++) {
             $createdDate = $startDate->copy()->addDays(rand(0, 60));
             $birthDate = Carbon::create(rand(1998, 2005), rand(1, 12), rand(1, 28));
 
