@@ -16,14 +16,15 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
-# Install PHP & JS dependencies (ignoring strict platform version locks)
+# Install PHP & JS dependencies
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 RUN npm install && npm run build
 
 # Set permissions for storage & cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-EXPOSE 8080
+# Use Render's dynamic port
+EXPOSE 10000
 
-# Run migrations and start Laravel server
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8080
+# Run migrations and start Laravel server binding to $PORT
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
