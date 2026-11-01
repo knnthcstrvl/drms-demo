@@ -24,8 +24,8 @@ class StudentsTableSeeder extends Seeder
         $existingStudentNumbers = Student::pluck('student_number')->toArray(); // for checking uniqueness
         $currentIndex = 1;
 
-        // Create 200 students
-        for ($i = 1; $i <= 20; $i++) {
+        // Create 15 regular students; the five fixed students below bring the total to 20.
+        for ($i = 1; $i <= 15; $i++) {
             $createdDate = $startDate->copy()->addDays(rand(0, 60));
             $birthDate = Carbon::create(rand(1998, 2005), rand(1, 12), rand(1, 28));
 
@@ -53,41 +53,6 @@ class StudentsTableSeeder extends Seeder
 
             if ($student->filename !== $studentNumber) {
                 $student->update(['filename' => $studentNumber]);
-            }
-        }
-
-        // Add students on specific dates
-        $specificDates = [now()->subDays(7), now()->subDays(14), now()->subDays(21), now()->subDays(1), now()];
-
-        foreach ($specificDates as $date) {
-            $count = rand(3, 8);
-            for ($j = 0; $j < $count; $j++) {
-                $birthDate = Carbon::create(rand(1998, 2005), rand(1, 12), rand(1, 28));
-
-                do {
-                    $studentNumber = '2024-' . str_pad($currentIndex++, 5, '0', STR_PAD_LEFT);
-                } while (in_array($studentNumber, $existingStudentNumbers));
-
-                $existingStudentNumbers[] = $studentNumber;
-
-                $student = Student::firstOrCreate(
-                    ['student_number' => $studentNumber],
-                    [
-                        'last_name' => $lastNames[array_rand($lastNames)],
-                        'first_name' => $firstNames[array_rand($firstNames)],
-                        'middle_name' => $middleNames[array_rand($middleNames)],
-                        'birth_date' => $birthDate->format('Y-m-d'),
-                        'program' => $programs[array_rand($programs)],
-                        'filename' => $studentNumber,
-                        'year_graduated' => (string) rand(now()->year, now()->year - 4),
-                        'date_time_created' => $date,
-                        'date_time_updated' => $date,
-                    ]
-                );
-
-                if ($student->filename !== $studentNumber) {
-                    $student->update(['filename' => $studentNumber]);
-                }
             }
         }
 
