@@ -23,3 +23,6 @@ php artisan storage:link || true
 
 echo "Running Database Migrations..."
 php artisan migrate --force
+
+echo "Ensuring the demo admin account exists..."
+php artisan db:seed --class=Database\\Seeders\\DemoAdminSeeder --force
