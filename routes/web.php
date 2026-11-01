@@ -25,6 +25,14 @@ use App\Http\Controllers\AddStudentController;
 
 Route::redirect('/', 'dashboard');
 
+// Opening this URL directly should take visitors to the login page, where the
+// demo login form can submit its CSRF-protected POST request.
+Route::get('/demo-login', function () {
+    abort_unless(config('app.demo_login_enabled'), 404);
+
+    return redirect()->route('login')->with('status', __('Use the demo login button to continue.'));
+})->middleware('guest');
+
 Route::post('/demo-login', function (Request $request) {
     abort_unless(config('app.demo_login_enabled'), 404);
 
