@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use App\Models\User;
 use App\Http\Controllers\DataFeedController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
@@ -21,6 +24,20 @@ use App\Http\Controllers\AddStudentController;
 */
 
 Route::redirect('/', 'dashboard');
+
+Route::post('/demo-login', function (Request $request) {
+    abort_unless(config('app.demo_login_enabled'), 404);
+
+    $user = User::where('email', config('app.demo_admin_email'))
+        ->where('role', 'Admin')
+        ->where('status', 'Active')
+        ->firstOrFail();
+
+    Auth::login($user);
+    $request->session()->regenerate();
+
+    return redirect()->intended(route('dashboard'));
+})->middleware(['guest', 'throttle:10,1'])->name('demo.login');
 
 Route::middleware(['auth:sanctum', 'verified', 'force.password.change'])->group(function () {
 

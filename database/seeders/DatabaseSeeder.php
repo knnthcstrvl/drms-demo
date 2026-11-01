@@ -15,12 +15,13 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
 
-        // $this->call([
-        //     // DashboardTableSeeder::class,
-        //     StudentsTableSeeder::class,
-        // ]);
+        $this->call([
+            // DashboardTableSeeder::class,
+            StudentsTableSeeder::class,
+        ]);
 
         \App\Models\User::factory(10)->create();
+        $this->call(DemoAdminSeeder::class);
         // \App\Models\Student::factory(10)->create();
     }
 }

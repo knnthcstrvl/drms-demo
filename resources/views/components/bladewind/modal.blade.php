@@ -210,54 +210,35 @@
 <span class="overflow-hidden"></span>
 
 <script>
-    window.__bwModalBindings = window.__bwModalBindings || {
-        modals: {},
-        globalKeyup: false,
-        globalKeydown: false,
-    };
+    domEl('.bw-{{$name}}-modal').addEventListener('click', function (e) {
+        let backdropCanClose = this.getAttribute('data-backdrop-can-close');
+        if (backdropCanClose) hideModal('{{$name}}');
+    });
 
-    if (!window.__bwModalBindings.modals['{{$name}}']) {
-        domEl('.bw-{{$name}}-modal').addEventListener('click', function (e) {
-            if (e.target !== this) return;
-            let openedAt = Number(this.dataset.bwOpenedAt || '0');
-            if (openedAt > 0 && (Date.now() - openedAt) < 200) return;
-            let backdropCanClose = this.getAttribute('data-backdrop-can-close');
-            if (backdropCanClose === '1') hideModal('{{$name}}');
-        });
+    domEl('.bw-{{$name}}').addEventListener('click', function (e) {
+        e.stopImmediatePropagation();
+    });
 
-        domEl('.bw-{{$name}}').addEventListener('click', function (e) {
-            e.stopImmediatePropagation();
-        });
-
-        if (domEls('.bw-{{$name}}-modal .modal-footer>button')) {
-            domEls('.bw-{{$name}}-modal .modal-footer>button').forEach((el) => {
-                el.addEventListener('click', function (e) {
-                    e.stopImmediatePropagation();
-                });
+    if (domEls('.bw-{{$name}}-modal .modal-footer>button')) {
+        domEls('.bw-{{$name}}-modal .modal-footer>button').forEach((el) => {
+            el.addEventListener('click', function (e) {
+                e.stopImmediatePropagation();
             });
-        }
-
-        window.__bwModalBindings.modals['{{$name}}'] = true;
+        });
     }
 
-    if (!window.__bwModalBindings.globalKeyup) {
-        document.addEventListener('keyup', function (e) {
-            if (e.key === "Escape") {
-                if (currentModal !== undefined && currentModal.length > 0) {
-                    let modalName = currentModal[(currentModal.length - 1)];
-                    if (domEl(`.bw-${modalName}-modal`).getAttribute('data-backdrop-can-close') === '1') {
-                        hideModal(modalName);
-                        e.stopImmediatePropagation();
-                    }
+    document.addEventListener('keyup', function (e) {
+        if (e.key === "Escape") {
+            if (currentModal !== undefined && currentModal.length > 0) {
+                let modalName = currentModal[(currentModal.length - 1)];
+                if (domEl(`.bw-${modalName}-modal`).getAttribute('data-backdrop-can-close') === '1') {
+                    hideModal(modalName);
+                    e.stopImmediatePropagation();
                 }
             }
-        });
-        window.__bwModalBindings.globalKeyup = true;
-    }
+        }
+    });
 
-    if (!window.__bwModalBindings.globalKeydown) {
-        document.addEventListener('keydown', trapFocusInModal);
-        window.__bwModalBindings.globalKeydown = true;
-    }
+    document.addEventListener('keydown', trapFocusInModal);
 
 </script>

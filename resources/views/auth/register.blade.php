@@ -17,8 +17,8 @@
             </div>
 
             <div>
-                <x-label for="email_address">{{ __('Email Address') }} </x-label>
-                <x-input id="email_address" type="email" name="email_address" :value="old('email_address')" />
+                <x-label for="email">{{ __('Email Address') }} <span class="text-red-500">*</span></x-label>
+                <x-input id="email" type="email" name="email" :value="old('email')" required autocomplete="email" />
             </div>
 
             <div>

@@ -36,7 +36,7 @@ class StudentsTableSeeder extends Seeder
 
             $existingStudentNumbers[] = $studentNumber; // prevent reuse in next loop
 
-            Student::firstOrCreate(
+            $student = Student::firstOrCreate(
                 ['student_number' => $studentNumber],
                 [
                     'last_name' => $lastNames[array_rand($lastNames)],
@@ -44,11 +44,16 @@ class StudentsTableSeeder extends Seeder
                     'middle_name' => $middleNames[array_rand($middleNames)],
                     'birth_date' => $birthDate->format('Y-m-d'),
                     'program' => $programs[array_rand($programs)],
+                    'filename' => $studentNumber,
                     'year_graduated' => (string) rand(now()->year, now()->year + 4),
                     'date_time_created' => $createdDate,
                     'date_time_updated' => $createdDate,
                 ]
             );
+
+            if ($student->filename !== $studentNumber) {
+                $student->update(['filename' => $studentNumber]);
+            }
         }
 
         // Add students on specific dates
@@ -65,7 +70,7 @@ class StudentsTableSeeder extends Seeder
 
                 $existingStudentNumbers[] = $studentNumber;
 
-                Student::firstOrCreate(
+                $student = Student::firstOrCreate(
                     ['student_number' => $studentNumber],
                     [
                         'last_name' => $lastNames[array_rand($lastNames)],
@@ -73,11 +78,16 @@ class StudentsTableSeeder extends Seeder
                         'middle_name' => $middleNames[array_rand($middleNames)],
                         'birth_date' => $birthDate->format('Y-m-d'),
                         'program' => $programs[array_rand($programs)],
+                        'filename' => $studentNumber,
                         'year_graduated' => (string) rand(now()->year, now()->year - 4),
                         'date_time_created' => $date,
                         'date_time_updated' => $date,
                     ]
                 );
+
+                if ($student->filename !== $studentNumber) {
+                    $student->update(['filename' => $studentNumber]);
+                }
             }
         }
 

@@ -17,6 +17,8 @@ return [
     */
 
     'name' => env('APP_NAME', 'Laravel'),
+    'demo_login_enabled' => env('DEMO_LOGIN_ENABLED', false),
+    'demo_admin_email' => env('DEMO_ADMIN_EMAIL', 'demo.admin@drms.local'),
 
     /*
     |--------------------------------------------------------------------------

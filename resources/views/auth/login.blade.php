@@ -35,6 +35,22 @@
             </x-button>            
         </div>
     </form>
+
+    @if (config('app.demo_login_enabled'))
+        <div class="my-5 flex items-center gap-3" aria-hidden="true">
+            <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+            <span class="text-xs uppercase text-gray-500">{{ __('or') }}</span>
+            <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+        </div>
+        <form method="POST" action="{{ route('demo.login') }}">
+            @csrf
+            <button type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
+                {{ __('Continue as Demo Admin') }}
+            </button>
+            <!-- <p class="mt-2 text-center text-xs text-gray-500">{{ __('Uses a shared demo account. Changes may be visible to other visitors.') }}</p> -->
+        </form>
+    @endif
+
     <x-validation-errors class="mt-4" />
     <!-- Footer -->
     <div class="pt-5 mt-6 border-t border-gray-100 dark:border-gray-700/60">
