@@ -3,7 +3,7 @@ import {
   Chart, LineController, LineElement, Filler, PointElement, LinearScale, TimeScale, Tooltip,
 } from 'chart.js';
 import 'chartjs-adapter-moment';
-import { chartAreaGradient } from '../app';
+import { chartAreaGradient } from '../chart-utils';
 import moment from 'moment';
 
 // Import utilities

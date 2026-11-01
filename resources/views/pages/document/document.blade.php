@@ -306,7 +306,7 @@
                         <div class="w-3/4 h-full flex flex-col min-h-0">
                             <div class="!p-2 h-full flex-1 flex flex-col min-h-0 bg-white border border-slate-200 rounded-lg dark:bg-dark-800/30 dark:border-dark-600/60">
                                 <iframe 
-                                    src="/document/view/{{ $student->filename }}?file=true#toolbar=0&zoom=100" 
+                                    src="{{ route('document-view', ['selected' => $student->filename]) }}?file=true#toolbar=0&zoom=100" 
                                     class="w-full h-full flex-1 min-h-0 rounded-lg" 
                                     style="height: 100% !important;" 
                                     frameborder="0">

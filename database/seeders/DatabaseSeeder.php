@@ -16,12 +16,12 @@ class DatabaseSeeder extends Seeder
     {
 
         $this->call([
-            // DashboardTableSeeder::class,
+            DashboardTableSeeder::class,
             StudentsTableSeeder::class,
         ]);
 
         \App\Models\User::factory(10)->create();
         $this->call(DemoAdminSeeder::class);
-        // \App\Models\Student::factory(10)->create();
     }
 }
+

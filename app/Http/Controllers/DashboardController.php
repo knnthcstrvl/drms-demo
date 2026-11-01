@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Fortify\PasswordValidationRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Student;
 use App\Models\User;
@@ -67,28 +68,35 @@ class DashboardController extends Controller
     }
 
     public function dashboardMainData() {
-        return array_merge(
-            $this->studentStats(),
-            $this->userStats(),
-            $this->activityStats(),
-            ['mostActiveUsers' => $this->mostActiveUsersStats()],
-            ['recentActivities' => $this->recentActivities()],
-            ['recentlyAddedStudents' => $this->recentlyAddedStudents()],
-        );
+        return Cache::store('file')->remember('dashboard.main_data', now()->addSeconds(15), function () {
+            return array_merge(
+                $this->studentStats(),
+                $this->userStats(),
+                $this->activityStats(),
+                ['mostActiveUsers' => $this->mostActiveUsersStats()],
+                ['recentActivities' => $this->recentActivities()],
+                ['recentlyAddedStudents' => $this->recentlyAddedStudents()],
+            );
+        });
     }
 
     public function studentStats() {
         $currentYear = now()->year;
         $lastYear = $currentYear - 1;
 
-        $totalStudents = Student::count();
-        $thisYear = Student::where('year_graduated', $currentYear)->count();
-        $previousYear = Student::where('year_graduated', $lastYear)->count();
+        $stats = Student::query()
+            ->selectRaw(
+                'COUNT(*) as total, SUM(CASE WHEN year_graduated = ? THEN 1 ELSE 0 END) as this_year, SUM(CASE WHEN year_graduated = ? THEN 1 ELSE 0 END) as previous_year',
+                [$currentYear, $lastYear]
+            )
+            ->first();
 
-        $studentPercentage = $previousYear > 0 ? round((($thisYear - $previousYear) / $previousYear) * 100) : 100;
+        $studentPercentage = $stats->previous_year > 0
+            ? round((($stats->this_year - $stats->previous_year) / $stats->previous_year) * 100)
+            : 100;
 
         return [
-            'totalStudents' => $totalStudents,
+            'totalStudents' => (int) $stats->total,
             'studentPercentage' => $studentPercentage,
         ];
     }
@@ -97,14 +105,19 @@ class DashboardController extends Controller
         $currentYear = now()->year;
         $lastYear = $currentYear - 1;
 
-        $totalUsers = User::count();
-        $thisYear = User::whereYear('date_time_created', $currentYear)->count();
-        $previousYear = User::whereYear('date_time_created', $lastYear)->count();
+        $stats = User::query()
+            ->selectRaw(
+                'COUNT(*) as total, SUM(CASE WHEN date_time_created >= ? AND date_time_created < ? THEN 1 ELSE 0 END) as this_year, SUM(CASE WHEN date_time_created >= ? AND date_time_created < ? THEN 1 ELSE 0 END) as previous_year',
+                ["{$currentYear}-01-01", ($currentYear + 1) . '-01-01', "{$lastYear}-01-01", "{$currentYear}-01-01"]
+            )
+            ->first();
 
-        $userPercentage = $previousYear > 0 ? round((($thisYear - $previousYear) / $previousYear) * 100) : 100;
+        $userPercentage = $stats->previous_year > 0
+            ? round((($stats->this_year - $stats->previous_year) / $stats->previous_year) * 100)
+            : 100;
 
         return [
-            'totalUsers' => $totalUsers,
+            'totalUsers' => (int) $stats->total,
             'userPercentage' => $userPercentage,
         ];
     }
@@ -113,14 +126,19 @@ class DashboardController extends Controller
         $currentYear = now()->year;
         $lastYear = $currentYear - 1;
 
-        $totalActivities = AuditLog::count();
-        $thisYear = AuditLog::whereYear('date_time', $currentYear)->count();
-        $previousYear = AuditLog::whereYear('date_time', $lastYear)->count();
+        $stats = AuditLog::query()
+            ->selectRaw(
+                'COUNT(*) as total, SUM(CASE WHEN date_time >= ? AND date_time < ? THEN 1 ELSE 0 END) as this_year, SUM(CASE WHEN date_time >= ? AND date_time < ? THEN 1 ELSE 0 END) as previous_year',
+                ["{$currentYear}-01-01", ($currentYear + 1) . '-01-01', "{$lastYear}-01-01", "{$currentYear}-01-01"]
+            )
+            ->first();
 
-        $activityPercentage = $previousYear > 0 ? round((($thisYear - $previousYear) / $previousYear) * 100) : 100;
+        $activityPercentage = $stats->previous_year > 0
+            ? round((($stats->this_year - $stats->previous_year) / $stats->previous_year) * 100)
+            : 100;
 
         return [
-            'totalActivities' => $totalActivities,
+            'totalActivities' => (int) $stats->total,
             'activityPercentage' => $activityPercentage,
         ];
     }

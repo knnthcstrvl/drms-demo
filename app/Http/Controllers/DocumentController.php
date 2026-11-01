@@ -10,19 +10,32 @@ use Illuminate\Support\Facades\Log;
 
 class DocumentController extends Controller
 {
-    private function resolveDocumentFilePath($document): ?string
+    private function resolveDocumentFilePath(Student $student): ?string
     {
-        if (!$document || !$document->doc_path) {
-            return null;
+        // Older imports may have no document row/path, while the PDF is still
+        // named after the student's filename in storage/app/public/documents.
+        $candidates = [
+            $student->document?->doc_path,
+            $student->filename,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!$candidate) {
+                continue;
+            }
+
+            $filename = basename(str_replace('\\', '/', trim($candidate)));
+            if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) !== 'pdf') {
+                $filename .= '.pdf';
+            }
+
+            $filePath = storage_path("app/public/documents/{$filename}");
+            if (is_file($filePath)) {
+                return $filePath;
+            }
         }
 
-        $filename = basename($document->doc_path);
-
-        if (strtolower(pathinfo($filename, PATHINFO_EXTENSION)) !== 'pdf') {
-            $filename .= '.pdf';
-        }
-
-        return storage_path("app/public/documents/{$filename}");
+        return null;
     }
 
     private function buildDownloadFilename(Student $student): string
@@ -55,14 +68,7 @@ class DocumentController extends Controller
             return redirect()->route('document');
         }
 
-        $document = $student->document;
-
-        if (!$document || !$document->doc_path) {
-            session()->flash('error_notification', "We couldn't find the document '{$selected}'. It may not be available at the moment.");
-            return redirect()->route('document');
-        }
-
-        $filePath = $this->resolveDocumentFilePath($document);
+        $filePath = $this->resolveDocumentFilePath($student);
 
         if (!$filePath || !file_exists($filePath)) {
             session()->flash('error_notification', "The document '{$selected}' is not available right now. It may have been moved or deleted.");
@@ -112,13 +118,7 @@ class DocumentController extends Controller
             return redirect()->route('document')->with('error_notification', "The file '{$selected}' is currently not available.");
         }
 
-        $document = $student->document;
-
-        if (!$document || !$document->doc_path) {
-            return redirect()->route('document')->with('error_notification', "We couldn't find the document '{$selected}'. It may not be available at the moment.");
-        }
-
-        $filePath = $this->resolveDocumentFilePath($document);
+        $filePath = $this->resolveDocumentFilePath($student);
 
         if (!$filePath || !file_exists($filePath)) {
             return redirect()->route('document')->with('error_notification', "The document '{$selected}' is not available right now. It may have been moved or deleted.");
@@ -172,13 +172,7 @@ class DocumentController extends Controller
                     continue; // Skip if student not found
                 }
 
-                $document = $student->document;
-                
-                if (!$document || !$document->doc_path) {
-                    continue; // Skip if document not found
-                }
-
-                $filePath = $this->resolveDocumentFilePath($document);
+                $filePath = $this->resolveDocumentFilePath($student);
                 
                 if ($filePath && file_exists($filePath)) {
                     $zip->addFile($filePath, $this->buildDownloadFilename($student));
@@ -233,12 +227,7 @@ class DocumentController extends Controller
                 return response()->json(['error' => "The file '{$selected}' is currently not available."], 404);
             }
 
-            $document = $student->document;
-            if (!$document || !$document->doc_path) {
-                return response()->json(['error' => "We couldn't find the document '{$selected}'. It may not be available at the moment."], 404);
-            }
-
-            $filePath = $this->resolveDocumentFilePath($document);
+            $filePath = $this->resolveDocumentFilePath($student);
             if (!$filePath || !file_exists($filePath)) {
                 return response()->json(['error' => "The document '{$selected}' is not available right now. It may have been moved or deleted."], 404);
             }
@@ -262,12 +251,7 @@ class DocumentController extends Controller
             return redirect()->route('document')->with('error_notification', "The file '{$selected}' is currently not available.");
         }
 
-        $document = $student->document;
-        if (!$document || !$document->doc_path) {
-            return redirect()->route('document')->with('error_notification', "We couldn't find the document '{$selected}'. It may not be available at the moment.");
-        }
-
-        $filePath = $this->resolveDocumentFilePath($document);
+        $filePath = $this->resolveDocumentFilePath($student);
         if (!$filePath || !file_exists($filePath)) {
             return redirect()->route('document')->with('error_notification', "The document '{$selected}' is not available right now. It may have been moved or deleted.");
         }

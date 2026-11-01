@@ -1,0 +1,23 @@
+.env
+.env.*
+!.env.example
+.git
+.github
+.continue
+.vscode
+.idea
+node_modules
+vendor
+public/build
+public/hot
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+tests
+test upload
+mysql_dumps
+drms.sql
+*.docx
+npm-debug.log*
+yarn-debug.log*

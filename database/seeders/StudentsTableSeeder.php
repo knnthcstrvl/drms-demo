@@ -91,6 +91,32 @@ class StudentsTableSeeder extends Seeder
             }
         }
 
+        // Add five final students with stable student numbers and filenames.
+        $fixedStudents = [
+            '2024-90001',
+            '2024-90002',
+            '2024-90003',
+            '2024-90004',
+            '2024-90005',
+        ];
+
+        foreach ($fixedStudents as $studentNumber) {
+            Student::firstOrCreate(
+                ['student_number' => $studentNumber],
+                [
+                    'last_name' => $lastNames[array_rand($lastNames)],
+                    'first_name' => $firstNames[array_rand($firstNames)],
+                    'middle_name' => $middleNames[array_rand($middleNames)],
+                    'birth_date' => Carbon::create(rand(1998, 2005), rand(1, 12), rand(1, 28))->format('Y-m-d'),
+                    'program' => $programs[array_rand($programs)],
+                    'filename' => $studentNumber,
+                    'year_graduated' => (string) rand(now()->year, now()->year - 4),
+                    'date_time_created' => now(),
+                    'date_time_updated' => now(),
+                ]
+            )->update(['filename' => $studentNumber]);
+        }
+
         $this->command->info('Student seeder completed without duplication!');
     }
 }
