@@ -16,8 +16,8 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
-# Install PHP & JS dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Install PHP & JS dependencies (ignoring strict platform version locks)
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 RUN npm install && npm run build
 
 # Set permissions for storage & cache
